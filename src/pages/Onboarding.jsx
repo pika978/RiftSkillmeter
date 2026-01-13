@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,14 +10,50 @@ import { useLearning } from '@/contexts/LearningContext';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { learningGoals } from '@/data/constants';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, ArrowRight, Loader2, Sparkles, Terminal } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Sparkles, Terminal, BookOpen, Trophy, Target, Zap, Map, Clock, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+
+// Platform tips to show during loading
+const platformTips = [
+  {
+    icon: Map,
+    title: "Personalized Roadmaps",
+    description: "Your AI-generated roadmap is tailored to your skill level and learning goals. Each concept builds on the previous one."
+  },
+  {
+    icon: BookOpen,
+    title: "Video-Based Learning",
+    description: "Watch curated YouTube videos for each concept. Mark them complete to track your progress."
+  },
+  {
+    icon: Target,
+    title: "Track Your Progress",
+    description: "See your completion percentage grow as you finish concepts. Stay motivated with visual progress tracking."
+  },
+  {
+    icon: Trophy,
+    title: "Earn Certificates",
+    description: "Complete a course 100% to unlock a downloadable certificate showcasing your achievement."
+  },
+  {
+    icon: Zap,
+    title: "AI-Generated Notes",
+    description: "Get smart study notes generated automatically for each video to reinforce your learning."
+  },
+  {
+    icon: CheckCircle,
+    title: "Quizzes & Assessments",
+    description: "Test your knowledge with AI-generated quizzes after each concept to solidify understanding."
+  }
+];
+
 const skillLevels = [
   { value: 'beginner', label: 'Beginner', description: 'Just starting out, little to no experience' },
   { value: 'intermediate', label: 'Intermediate', description: 'Some experience, know the basics' },
   { value: 'advanced', label: 'Advanced', description: 'Solid experience, looking to master' },
 ];
+
 export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [skillLevel, setSkillLevel] = useState('beginner');
@@ -25,11 +61,22 @@ export default function Onboarding() {
   const [customTopic, setCustomTopic] = useState('');
   const [dailyMinutes, setDailyMinutes] = useState(30);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const { completeOnboarding, authFetch } = useAuth();
   const { generateRoadmap, courses } = useLearning();
   const navigate = useNavigate();
-  const totalSteps = 2; // Reduced from 3
+  const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
+
+  // Cycle through tips every 3 seconds during loading
+  useEffect(() => {
+    if (isGenerating) {
+      const interval = setInterval(() => {
+        setCurrentTipIndex((prev) => (prev + 1) % platformTips.length);
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [isGenerating]);
   // toggleItem removed as it's no longer needed
 
   const handleGenerate = async () => {
@@ -71,6 +118,76 @@ export default function Onboarding() {
     }
   };
   return (<PublicLayout showFooter={false}>
+    {/* Loading Overlay with Platform Tips */}
+    <AnimatePresence>
+      {isGenerating && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-8"
+        >
+          <div className="max-w-2xl w-full space-y-8">
+            {/* Header */}
+            <div className="text-center space-y-4">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="inline-flex items-center justify-center w-16 h-16 border-4 border-black rounded-full"
+              >
+                <Sparkles className="w-8 h-8" />
+              </motion.div>
+              <h2 className="font-heading text-3xl font-bold">Generating Your Roadmap</h2>
+              <p className="text-muted-foreground">Our AI is creating a personalized learning path just for you...</p>
+            </div>
+
+            {/* Tip Cards */}
+            <div className="relative h-48">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentTipIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.4 }}
+                  className="absolute inset-0"
+                >
+                  <Card className="h-full rounded-none border-2 border-black shadow-[6px_6px_0px_0px_#000]">
+                    <CardContent className="h-full flex flex-col items-center justify-center text-center p-8">
+                      {(() => {
+                        const TipIcon = platformTips[currentTipIndex].icon;
+                        return <TipIcon className="w-12 h-12 mb-4 text-black" />;
+                      })()}
+                      <h3 className="font-bold text-xl mb-2">{platformTips[currentTipIndex].title}</h3>
+                      <p className="text-muted-foreground">{platformTips[currentTipIndex].description}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Progress Dots */}
+            <div className="flex justify-center gap-2">
+              {platformTips.map((_, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "w-2 h-2 rounded-full transition-all",
+                    index === currentTipIndex ? "bg-black w-6" : "bg-gray-300"
+                  )}
+                />
+              ))}
+            </div>
+
+            {/* Fun fact */}
+            <p className="text-center text-sm text-muted-foreground">
+              ✨ Did you know? This roadmap uses real YouTube videos curated by AI!
+            </p>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4">
       <Card className="w-full max-w-2xl rounded-none border-2 border-black shadow-[8px_8px_0px_0px_#000]">
         <CardHeader>
