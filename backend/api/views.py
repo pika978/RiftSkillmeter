@@ -428,6 +428,7 @@ def generate_roadmap_ai(request):
     course = Course.objects.create(
         title=course_data.get('title', f"Learn {topic}"),
         description=course_data.get('description', f"AI-generated course for {topic}"),
+        thumbnail=course_data.get('thumbnail', ''), # Use dynamic thumbnail
         difficulty=skill_level,
         estimated_hours=course_data.get('estimated_hours', 10),
         tags=course_data.get('tags', [topic, 'AI Generated'])
@@ -448,9 +449,13 @@ def generate_roadmap_ai(request):
             # notes = NotesGeneratorService.generate_notes(concept_data['title'], concept_data.get('description', ''))
             
             # Construct Search URL for video
-            # Construct Search URL for video (AI models hallucinate URLs, so we use search queries)
-            query = concept_data.get('video_search_query', concept_data.get('title', ''))
-            video_url = f"https://www.youtube.com/results?search_query={query.replace(' ', '+')}"
+            # Prioritize real video URL from YouTube API
+            if 'video_url' in concept_data and concept_data['video_url']:
+                 video_url = concept_data['video_url']
+            else:
+                 # Fallback to search query
+                 query = concept_data.get('video_search_query', concept_data.get('title', ''))
+                 video_url = f"https://www.youtube.com/results?search_query={query.replace(' ', '+')}"
             
             concept = Concept.objects.create(
                 chapter=chapter,

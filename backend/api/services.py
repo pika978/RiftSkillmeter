@@ -1,10 +1,49 @@
 import os
 import google.generativeai as genai
 from django.conf import settings
+import requests
 import json
+import logging
 
 # Configure Gemini
 genai.configure(api_key=settings.GEMINI_API_KEY)
+
+class YouTubeService:
+    API_KEY = "AIzaSyA98duwWN_9PKaaYmPY0K9WxpzTrPaxcdU"
+    
+    @staticmethod
+    def search_video(query):
+        """
+        Searches YouTube for a video matching the query.
+        Returns {video_url, thumbnail} or None.
+        """
+        try:
+            url = "https://www.googleapis.com/youtube/v3/search"
+            params = {
+                'part': 'snippet',
+                'q': query,
+                'type': 'video',
+                'maxResults': 1,
+                'key': YouTubeService.API_KEY
+            }
+            response = requests.get(url, params=params, timeout=10)
+            data = response.json()
+            
+            if 'items' in data and len(data['items']) > 0:
+                item = data['items'][0]
+                video_id = item['id']['videoId']
+                # Try to get high quality thumbnail, fallback to default
+                thumbnails = item['snippet']['thumbnails']
+                thumbnail = thumbnails.get('high', thumbnails.get('default'))['url']
+                
+                return {
+                    'video_url': f"https://www.youtube.com/embed/{video_id}",
+                    'thumbnail': thumbnail
+                }
+        except Exception as e:
+            print(f"YouTube Search Error for '{query}': {e}")
+            
+        return None
 
 class ContentDiscoveryService:
     @staticmethod
@@ -52,17 +91,40 @@ class ContentDiscoveryService:
                 request_options={"timeout": 60}  # 60 second timeout
             )
             print("DEBUG: Gemini response received. Length:", len(response.text))
-            import json
-            data = json.loads(response.text)
+            raw_response = response.text.replace('```json', '').replace('```', '').strip()
+            # print(f"DEBUG: Raw response: {raw_response[:500]}...") # Optional debug
+            
+            data = json.loads(raw_response)
             print("DEBUG: JSON parsed successfully")
             
-            # Post-process to structure simple video list for legacy compatibility if needed, 
-            # or return full structure.
-            # For now, we flatten the first few concepts to match existing view logic 
-            # OR we update the view to handle the rich structure. 
-            # Let's map it to the expected list of videos for the current view logic:
+            # Enrich with Real YouTube Data
+            course_thumbnail = None
             
-            # Return full structure for rich course generation
+            if 'chapters' in data:
+                for chapter in data['chapters']:
+                    if 'concepts' in chapter:
+                        for concept in chapter['concepts']:
+                            query = concept.get('video_search_query', concept['title'])
+                            # Append topic to query for better context
+                            full_query = f"{query} {topic} tutorial"
+                            
+                            print(f"DEBUG: Searching YouTube for: {full_query}")
+                            yt_data = YouTubeService.search_video(full_query)
+                            
+                            if yt_data:
+                                concept['video_url'] = yt_data['video_url']
+                                concept['thumbnail'] = yt_data['thumbnail']
+                                
+                                # Use first found thumbnail for the course if not set
+                                if not course_thumbnail:
+                                    course_thumbnail = yt_data['thumbnail']
+                            else:
+                                # Fallback if API fail/limit
+                                concept['video_url'] = "" 
+            
+            if course_thumbnail and 'course' in data:
+                 data['course']['thumbnail'] = course_thumbnail
+            
             return data
             
         except Exception as e:
