@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLearning } from '@/contexts/LearningContext';
 import { PlayCircle, FileText, CheckSquare, Flame, Trophy, ArrowRight, BookOpen, PlusCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ContributionGraph } from '@/components/dashboard/ContributionGraph';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -133,6 +134,11 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Contribution Graph */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <ContributionGraph />
+        </motion.div>
+
         {/* My Courses Section */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -156,8 +162,8 @@ export default function Dashboard() {
                     whileHover={{ scale: 1.02 }}
                     onClick={() => setCurrentRoadmap(roadmap)}
                     className={`p-4 rounded-lg border cursor-pointer transition-all ${currentRoadmap?.id === roadmap.id
-                        ? 'border-primary bg-primary/5 ring-2 ring-primary'
-                        : 'border-border hover:border-primary/50'
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary'
+                      : 'border-border hover:border-primary/50'
                       }`}
                   >
                     <div className="flex items-start gap-3">

@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, Target, BarChart3, Zap } from 'lucide-react';
+import Testimonials from '@/components/ui/twitter-testimonial-cards';
+import { ReviewForm } from '@/components/ui/review-form';
 const features = [
   { icon: Target, title: 'Personalized Roadmaps', description: 'AI creates a custom learning path based on your goals and experience level.' },
   { icon: BookOpen, title: 'Curated Free Content', description: 'Learn from the best free resources, organized into structured lessons.' },
@@ -79,6 +81,7 @@ export default function Landing() {
       </div>
     </section>
 
+
     {/* CTA Section */}
     <section className="py-20 bg-primary text-primary-foreground">
       <div className="container text-center">
@@ -91,5 +94,27 @@ export default function Landing() {
         </Button>
       </div>
     </section>
-  </PublicLayout>);
+
+    {/* Loved by Learners (Split Screen) */}
+    <section className="py-20 bg-background overflow-hidden relative">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-16">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold mb-4">Loved by Learners</h2>
+          <p className="text-muted-foreground">Join our community and share your story.</p>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          {/* Left: Testimonials */}
+          <div className="flex justify-center lg:justify-end min-h-[400px]">
+            <Testimonials />
+          </div>
+
+          {/* Right: Review Form */}
+          <div className="flex justify-center lg:justify-start">
+            <ReviewForm />
+          </div>
+        </div>
+      </div>
+    </section>
+  </PublicLayout >);
 }

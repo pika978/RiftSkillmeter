@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
+from django.db.models import Sum, Count
+from datetime import timedelta
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -61,9 +64,17 @@ class ConceptSerializer(serializers.ModelSerializer):
     videoUrl = serializers.URLField(source='video_url')
     contentType = serializers.CharField(source='content_type')
 
+    completed = serializers.SerializerMethodField()
+
     class Meta:
         model = Concept
-        fields = ('id', 'title', 'description', 'duration', 'videoUrl', 'notes', 'contentType', 'order')
+        fields = ('id', 'title', 'description', 'duration', 'videoUrl', 'notes', 'contentType', 'order', 'completed')
+
+    def get_completed(self, obj):
+        user = self.context.get('request').user if self.context.get('request') else None
+        if user and user.is_authenticated:
+            return ConceptProgress.objects.filter(user=user, concept=obj, completed=True).exists()
+        return False
 
 class ChapterSerializer(serializers.ModelSerializer):
     concepts = ConceptSerializer(many=True, read_only=True)
@@ -145,8 +156,45 @@ class UserProgressSerializer(serializers.ModelSerializer):
     currentStreak = serializers.IntegerField(source='current_streak')
     longestStreak = serializers.IntegerField(source='longest_streak')
     lastActivityDate = serializers.DateField(source='last_activity_date')
+    totalCoursesEnrolled = serializers.SerializerMethodField()
+    dailyProgress = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProgress
-        fields = ('id', 'user', 'totalMinutesLearned', 'totalConceptsCompleted', 'totalAssessmentsTaken', 'averageScore', 'currentStreak', 'longestStreak', 'lastActivityDate')
+        fields = ('id', 'user', 'totalMinutesLearned', 'totalConceptsCompleted', 'totalAssessmentsTaken', 'averageScore', 'currentStreak', 'longestStreak', 'lastActivityDate', 'totalCoursesEnrolled', 'dailyProgress')
         read_only_fields = ('user',)
+
+    def get_totalCoursesEnrolled(self, obj):
+        return obj.user.roadmaps.count()
+
+    def get_dailyProgress(self, obj):
+        today = timezone.now().date()
+        daily_data = []
+        
+        for i in range(6, -1, -1):
+            date = today - timedelta(days=i)
+            # Find completed concepts for this user on this date
+            completed = ConceptProgress.objects.filter(
+                user=obj.user,
+                completed=True,
+                completed_at__date=date
+            ).aggregate(
+                minutes=Sum('concept__duration'),
+                count=Count('id')
+            )
+            
+            daily_data.append({
+                'date': date.isoformat(),
+                'minutesLearned': completed['minutes'] or 0,
+                'conceptsCompleted': completed['count'] or 0
+            })
+            
+        return daily_data
+
+from .models import Lab
+
+class LabSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lab
+        fields = ('id', 'user', 'name', 'language', 'files', 'created_at', 'updated_at')
+        read_only_fields = ('user', 'created_at', 'updated_at')

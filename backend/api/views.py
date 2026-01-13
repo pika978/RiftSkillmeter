@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.db.models import Count
 
 from .serializers import UserRegistrationSerializer, UserSerializer
 
@@ -148,16 +149,55 @@ class RoadmapDetailView(generics.RetrieveUpdateDestroyAPIView):
 def mark_concept_complete(request, concept_id):
     try:
         concept = Concept.objects.get(id=concept_id)
+        
         # Get or create progress
         progress, created = ConceptProgress.objects.get_or_create(
             user=request.user,
             concept=concept
         )
+        
+        # Check if already completed to avoid double counting
+        was_completed = progress.completed
+        
         progress.completed = True
         progress.completed_at = timezone.now()
         progress.save()
         
-        # Update roadmap progress logic would go here
+        # --- Update Roadmap Progress ---
+        course = concept.chapter.course
+        total_concepts = Concept.objects.filter(chapter__course=course).count()
+        completed_concepts_count = ConceptProgress.objects.filter(
+            user=request.user, 
+            concept__chapter__course=course, 
+            completed=True
+        ).count()
+        
+        if total_concepts > 0:
+            roadmap_progress = int((completed_concepts_count / total_concepts) * 100)
+            Roadmap.objects.filter(user=request.user, course=course).update(progress=roadmap_progress)
+
+        # --- Update User Global Stats ---
+        if not was_completed:
+            user_stats, _ = UserProgress.objects.get_or_create(user=request.user)
+            user_stats.total_concepts_completed += 1
+            user_stats.total_minutes_learned += concept.duration
+            
+            # Update Streak
+            today = timezone.now().date()
+            if user_stats.last_activity_date != today:
+                one_day_ago = today - timezone.timedelta(days=1)
+                
+                if user_stats.last_activity_date == one_day_ago:
+                    user_stats.current_streak += 1
+                elif user_stats.last_activity_date is None or user_stats.last_activity_date < one_day_ago:
+                    user_stats.current_streak = 1
+                
+                user_stats.last_activity_date = today
+                
+                if user_stats.current_streak > user_stats.longest_streak:
+                    user_stats.longest_streak = user_stats.current_streak
+            
+            user_stats.save()
         
         return Response({'status': 'Concept marked as complete'})
     except Concept.DoesNotExist:
@@ -196,8 +236,55 @@ class DailyTaskListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # In a real app, filter by today's date
-        return DailyTask.objects.filter(user=self.request.user, completed=False)
+        # Return existing uncompleted tasks for today
+        today = timezone.now().date()
+        return DailyTask.objects.filter(user=self.request.user, completed=False, scheduled_date=today)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        
+        # If no tasks exist for today, generate them from current roadmap
+        if not queryset.exists():
+            self._generate_daily_tasks(request.user)
+            queryset = self.get_queryset()
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def _generate_daily_tasks(self, user):
+        """Generate up to 3 tasks from user's current roadmap uncompleted concepts."""
+        today = timezone.now().date()
+        
+        # Get user's roadmaps
+        roadmaps = Roadmap.objects.filter(user=user)
+        if not roadmaps.exists():
+            return
+        
+        # Get first roadmap (primary course)
+        roadmap = roadmaps.first()
+        course = roadmap.course
+        
+        # Find uncompleted concepts
+        completed_concept_ids = ConceptProgress.objects.filter(
+            user=user, completed=True
+        ).values_list('concept_id', flat=True)
+        
+        uncompleted_concepts = Concept.objects.filter(
+            chapter__course=course
+        ).exclude(id__in=completed_concept_ids).order_by('chapter__order', 'order')[:3]
+        
+        # Create tasks
+        for concept in uncompleted_concepts:
+            DailyTask.objects.get_or_create(
+                user=user,
+                concept=concept,
+                scheduled_date=today,
+                defaults={
+                    'task_type': 'video',
+                    'title': f"Complete: {concept.title}",
+                    'completed': False
+                }
+            )
 
 
 @api_view(['POST'])
@@ -398,3 +485,51 @@ def generate_roadmap_ai(request):
     
     serializer = RoadmapSerializer(roadmap)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ActivityLogView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        today = timezone.now().date()
+        start_date = today - timezone.timedelta(days=365)
+        
+        # intricate query to group by date
+        # For SQLite/Django simplicity, we can just fetch all completed items in range and process in python
+        # OR use values('completed_at__date').annotate(count=Count('id'))
+        
+        activity = ConceptProgress.objects.filter(
+            user=request.user,
+            completed=True,
+            completed_at__date__gte=start_date
+        ).values('completed_at__date').annotate(count=Count('id')).order_by('completed_at__date')
+        
+        # Convert to dictionary for easy lookup
+        activity_dict = {
+            item['completed_at__date'].isoformat(): item['count'] 
+            for item in activity 
+            if item['completed_at__date']
+        }
+        
+        return Response(activity_dict)
+
+
+from .models import Lab
+from .serializers import LabSerializer
+
+class LabListCreateView(generics.ListCreateAPIView):
+    serializer_class = LabSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Lab.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class LabDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = LabSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Lab.objects.filter(user=self.request.user)

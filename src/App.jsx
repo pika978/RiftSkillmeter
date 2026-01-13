@@ -17,6 +17,7 @@ import Progress from "./pages/Progress";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import PracticeLab from "./pages/PracticeLab";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -59,6 +60,7 @@ const App = () => {
                 <Route path="/progress" element={<Progress />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/practice-lab" element={<PracticeLab />} />
                 <Route path="/settings" element={<Settings />} />
 
                 {/* Catch-all */}

@@ -21,9 +21,11 @@ export function Header() {
     <div className="container mx-auto flex h-16 items-center justify-between">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-heading font-bold">
-          S
-        </div>
+        <img
+          src="/logo.png"
+          alt="SkillMeter"
+          className="h-9 w-9 object-contain"
+        />
         <span className="font-heading font-semibold text-xl hidden sm:inline">
           SkillMeter
         </span>

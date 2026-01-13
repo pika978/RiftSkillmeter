@@ -8,7 +8,8 @@ from .views import (
     AssessmentDetailView, submit_assessment,
     DailyTaskListView, complete_task,
     NotificationListView, mark_notification_read, UserStatsView,
-    generate_roadmap_ai, generate_concept_notes, generate_concept_quiz
+    generate_roadmap_ai, generate_concept_notes, generate_concept_quiz,
+    ActivityLogView, LabListCreateView, LabDetailView
 )
 
 urlpatterns = [
@@ -45,4 +46,9 @@ urlpatterns = [
     path('notifications/<int:notification_id>/read/', mark_notification_read, name='notification_read'),
     
     path('progress/', UserStatsView.as_view(), name='user_stats'),
+    path('activity/', ActivityLogView.as_view(), name='activity_log'),
+    
+    # Lab endpoints
+    path('labs/', LabListCreateView.as_view(), name='lab_list'),
+    path('labs/<int:pk>/', LabDetailView.as_view(), name='lab_detail'),
 ]

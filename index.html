@@ -4,6 +4,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <script>
+    (function () {
+      const link = document.querySelector("link[rel~='icon']");
+      const updateFavicon = (isDark) => {
+        link.href = isDark ? '/logo2.png' : '/logo.png';
+      };
+      const matcher = window.matchMedia('(prefers-color-scheme: dark)');
+      matcher.addEventListener('change', (e) => updateFavicon(e.matches));
+      updateFavicon(matcher.matches);
+    })();
+  </script>
   <title>SkillMeter AI</title>
   <meta name="description" content="AI-powered personalized learning roadmaps" />
   <meta name="author" content="SkillMeter" />
