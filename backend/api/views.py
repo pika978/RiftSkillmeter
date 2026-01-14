@@ -684,3 +684,54 @@ def generate_certificate(request, roadmap_id):
     response['Content-Disposition'] = f'attachment; filename="SkillMeter_Certificate_{safe_title}.pdf"'
     
     return response
+
+
+# ===== Study Room / Study Session API =====
+
+from .models import StudySession
+from .serializers import StudySessionSerializer
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def study_sessions_view(request):
+    """
+    GET: List all study sessions for the authenticated user
+    POST: Create a new study session
+    """
+    if request.method == 'GET':
+        sessions = StudySession.objects.filter(user=request.user)
+        serializer = StudySessionSerializer(sessions, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        serializer = StudySessionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def study_session_stats(request):
+    """
+    Get aggregated statistics for the user's study sessions.
+    """
+    from django.db.models import Sum, Avg
+    
+    sessions = StudySession.objects.filter(user=request.user)
+    
+    total_sessions = sessions.count()
+    total_focus_time = sessions.aggregate(total=Sum('focus_duration'))['total'] or 0
+    total_study_time = sessions.aggregate(total=Sum('total_duration'))['total'] or 0
+    total_distractions = sessions.aggregate(total=Sum('distraction_count'))['total'] or 0
+    avg_focus_percentage = sessions.aggregate(avg=Avg('focus_percentage'))['avg'] or 100.0
+    
+    return Response({
+        'totalSessions': total_sessions,
+        'totalFocusTime': total_focus_time,  # in seconds
+        'totalStudyTime': total_study_time,  # in seconds
+        'totalDistractions': total_distractions,
+        'averageFocusPercentage': round(avg_focus_percentage, 1),
+    })
+

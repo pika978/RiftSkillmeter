@@ -9,7 +9,8 @@ from .views import (
     DailyTaskListView, complete_task,
     NotificationListView, mark_notification_read, UserStatsView,
     generate_roadmap_ai, generate_concept_notes, generate_concept_quiz,
-    ActivityLogView, LabListCreateView, LabDetailView, generate_certificate
+    ActivityLogView, LabListCreateView, LabDetailView, generate_certificate,
+    study_sessions_view, study_session_stats
 )
 
 urlpatterns = [
@@ -52,4 +53,8 @@ urlpatterns = [
     # Lab endpoints
     path('labs/', LabListCreateView.as_view(), name='lab_list'),
     path('labs/<int:pk>/', LabDetailView.as_view(), name='lab_detail'),
+    
+    # Study Room / Study Session endpoints
+    path('study-sessions/', study_sessions_view, name='study_sessions'),
+    path('study-sessions/stats/', study_session_stats, name='study_session_stats'),
 ]

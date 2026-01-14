@@ -10,7 +10,7 @@ import logging
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
 class YouTubeService:
-    API_KEY = "AIzaSyDRnKJYR9KHNWnrITIoY2jJztBJr9RIkZg"
+    API_KEY = "AIzaSyApTJdGLXyO6AnjjV6zHtsQetQdmJo_WdM"
     
     @staticmethod
     def search_video(query):
@@ -30,6 +30,13 @@ class YouTubeService:
             response = requests.get(url, params=params, timeout=10)
             data = response.json()
             
+            # Debug logging
+            print(f"DEBUG YouTube API for '{query}': Status={response.status_code}")
+            if 'error' in data:
+                print(f"DEBUG YouTube API ERROR: {data['error'].get('message', data['error'])}")
+                # Fallback: Return a YouTube search URL so user can find the video manually
+                return YouTubeService._create_fallback_url(query)
+            
             if 'items' in data and len(data['items']) > 0:
                 item = data['items'][0]
                 video_id = item['id']['videoId']
@@ -37,14 +44,31 @@ class YouTubeService:
                 thumbnails = item['snippet']['thumbnails']
                 thumbnail = thumbnails.get('high', thumbnails.get('default'))['url']
                 
+                embed_url = f"https://www.youtube.com/embed/{video_id}"
+                print(f"DEBUG YouTube: Found video {video_id} -> {embed_url}")
+                
                 return {
-                    'video_url': f"https://www.youtube.com/embed/{video_id}",
+                    'video_url': embed_url,
                     'thumbnail': thumbnail
                 }
+            else:
+                print(f"DEBUG YouTube: No results found for '{query}'")
+                return YouTubeService._create_fallback_url(query)
         except Exception as e:
             print(f"YouTube Search Error for '{query}': {e}")
+            return YouTubeService._create_fallback_url(query)
             
         return None
+    
+    @staticmethod
+    def _create_fallback_url(query):
+        """Create a fallback YouTube search URL when API fails."""
+        import urllib.parse
+        search_query = urllib.parse.quote(query)
+        return {
+            'video_url': f"https://www.youtube.com/results?search_query={search_query}",
+            'thumbnail': 'https://via.placeholder.com/480x360?text=Search+YouTube'
+        }
 
 class ContentDiscoveryService:
     @staticmethod

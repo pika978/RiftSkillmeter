@@ -242,3 +242,22 @@ class Lab(models.Model):
 
     class Meta:
         ordering = ['-updated_at']
+
+
+class StudySession(models.Model):
+    """
+    Stores focus/study session data from the Study Room feature.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='study_sessions')
+    started_at = models.DateTimeField()
+    ended_at = models.DateTimeField(auto_now_add=True)
+    total_duration = models.IntegerField(default=0)  # Total session time in seconds
+    focus_duration = models.IntegerField(default=0)  # Time actually focused in seconds
+    distraction_count = models.IntegerField(default=0)  # Number of distraction events
+    focus_percentage = models.FloatField(default=100.0)  # Calculated focus score
+
+    def __str__(self):
+        return f"{self.user.username} - {self.started_at.strftime('%Y-%m-%d %H:%M')}"
+
+    class Meta:
+        ordering = ['-ended_at']

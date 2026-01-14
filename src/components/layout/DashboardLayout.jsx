@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Map, BookOpen, BarChart3, Bell, Settings, User, ChevronLeft, ChevronRight, LogOut, FlaskConical } from 'lucide-react';
+import { LayoutDashboard, Map, BookOpen, BarChart3, Bell, Settings, User, ChevronLeft, ChevronRight, LogOut, FlaskConical, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -13,6 +13,7 @@ const sidebarLinks = [
   { icon: BookOpen, label: 'Learning', href: '/learn' },
   { icon: BarChart3, label: 'Progress', href: '/progress' },
   { icon: FlaskConical, label: 'Practice Lab', href: '/practice-lab' },
+  { icon: Brain, label: 'Study Room', href: '/study-room' },
   { icon: Bell, label: 'Notifications', href: '/notifications' },
   { icon: User, label: 'Profile', href: '/profile' },
   { icon: Settings, label: 'Settings', href: '/settings' },

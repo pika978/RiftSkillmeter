@@ -198,3 +198,19 @@ class LabSerializer(serializers.ModelSerializer):
         model = Lab
         fields = ('id', 'user', 'name', 'language', 'files', 'created_at', 'updated_at')
         read_only_fields = ('user', 'created_at', 'updated_at')
+
+
+from .models import StudySession
+
+class StudySessionSerializer(serializers.ModelSerializer):
+    startedAt = serializers.DateTimeField(source='started_at')
+    endedAt = serializers.DateTimeField(source='ended_at', read_only=True)
+    totalDuration = serializers.IntegerField(source='total_duration')
+    focusDuration = serializers.IntegerField(source='focus_duration')
+    distractionCount = serializers.IntegerField(source='distraction_count')
+    focusPercentage = serializers.FloatField(source='focus_percentage')
+
+    class Meta:
+        model = StudySession
+        fields = ('id', 'user', 'startedAt', 'endedAt', 'totalDuration', 'focusDuration', 'distractionCount', 'focusPercentage')
+        read_only_fields = ('user', 'endedAt')
