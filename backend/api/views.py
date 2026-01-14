@@ -104,6 +104,8 @@ from .serializers import (
 )
 from .utils.notifications import send_email_notification, send_whatsapp_notification
 from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Count, Sum, F
 from .services import ContentDiscoveryService, NotesGeneratorService, QuizGeneratorService
 
 class LearnerProfileView(generics.RetrieveUpdateAPIView):
@@ -344,6 +346,111 @@ class UserStatsView(generics.RetrieveAPIView):
 
     def get_object(self):
         return UserProgress.objects.get_or_create(user=self.request.user)[0]
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        
+        # Calculate Rank (Consistent with Leaderboard API)
+        try:
+            from django.contrib.auth.models import User
+            # Get all users with some progress
+            users_with_progress = User.objects.filter(concept_progress__completed=True).distinct()
+            
+            leaderboard_data = [] # List of dicts {username, points}
+            
+            # 1. Calculate scores for all users
+            for user in users_with_progress:
+                concepts = ConceptProgress.objects.filter(user=user, completed=True).count()
+                roadmaps = Roadmap.objects.filter(user=user).count()
+                score = (concepts * 10) + (roadmaps * 50)
+                
+                leaderboard_data.append({
+                    'username': user.username,
+                    'points': score
+                })
+
+            # Check if current user is in the list, if not add them (score 0 or enrollment only)
+            if not any(u['username'] == request.user.username for u in leaderboard_data):
+                my_roadmaps = Roadmap.objects.filter(user=request.user).count()
+                my_score = (0 * 10) + (my_roadmaps * 50)
+                leaderboard_data.append({
+                    'username': request.user.username,
+                    'points': my_score
+                })
+
+            # 2. Deterministic Sort: Points DESC, then Username ASC
+            # We sort by (-points, username) to achieve Descending Points and Ascending Username
+            leaderboard_data.sort(key=lambda x: (-x['points'], x['username']))
+            
+            # 3. Find my rank
+            rank = 0
+            for i, entry in enumerate(leaderboard_data):
+                if entry['username'] == request.user.username:
+                    rank = i + 1
+                    break
+            
+            data['rank'] = rank
+            
+        except Exception as e:
+            print(f"Error calculating rank: {e}")
+            data['rank'] = 0
+            
+        return Response(data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_leaderboard(request):
+    try:
+        from django.contrib.auth.models import User
+        
+        # Calculate leaderboard from actual data:
+        # - concepts_completed: Count of completed ConceptProgress per user
+        # - courses_progress: Sum of progress across Roadmaps
+        
+        leaderboard = []
+        
+        # Get all users who have any learning activity
+        users_with_progress = User.objects.filter(
+            concept_progress__completed=True
+        ).distinct()
+        
+        for user in users_with_progress:
+            # Count completed concepts
+            concepts_completed = ConceptProgress.objects.filter(
+                user=user, completed=True
+            ).count()
+            
+            # Calculate score: concepts * 10 + each course enrollment * 50
+            roadmaps_count = Roadmap.objects.filter(user=user).count()
+            score = (concepts_completed * 10) + (roadmaps_count * 50)
+            
+            leaderboard.append({
+                'rank': 0,
+                'name': f"{user.first_name} {user.last_name}".strip() or user.username,
+                'username': user.username, # Added for sorting stability
+                'points': score,
+                'badge': ''
+            })
+        
+        # Deterministic Sort: Points DESC, then Username ASC
+        # This matches the UserStatsView rank calculation exactly
+        leaderboard.sort(key=lambda x: (-x['points'], x['username']))
+        
+        # Take top 5 and assign ranks/badges
+        top_5 = leaderboard[:5]
+        for i, entry in enumerate(top_5):
+            entry['rank'] = i + 1
+            if i == 0: entry['badge'] = '🥇'
+            elif i == 1: entry['badge'] = '🥈'
+            elif i == 2: entry['badge'] = '🥉'
+            else: entry['badge'] = str(i + 1)
+        
+        return Response(top_5)
+    except Exception as e:
+        print(f"Error fetching leaderboard: {e}")
+        return Response({'error': str(e)}, status=500)
 
 
 @api_view(['POST'])
@@ -710,4 +817,84 @@ def study_session_stats(request):
         'totalDistractions': total_distractions,
         'averageFocusPercentage': round(avg_focus_percentage, 1),
     })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_leaderboard(request):
+    try:
+        from django.contrib.auth.models import User
+        
+        # Calculate leaderboard from actual data:
+        # - concepts_completed: Count of completed ConceptProgress per user
+        # - courses_progress: Sum of progress across Roadmaps
+        
+        leaderboard = []
+        
+        # Get all users who have any learning activity
+        users_with_progress = User.objects.filter(
+            concept_progress__completed=True
+        ).distinct()
+        
+        for user in users_with_progress:
+            # Count completed concepts
+            concepts_completed = ConceptProgress.objects.filter(
+                user=user, completed=True
+            ).count()
+            
+            # Calculate score: concepts * 10 + each course enrollment * 50
+            roadmaps_count = Roadmap.objects.filter(user=user).count()
+            score = (concepts_completed * 10) + (roadmaps_count * 50)
+            
+            leaderboard.append({
+                'rank': 0,
+                'name': f"{user.first_name} {user.last_name}".strip() or user.username,
+                'points': score,
+                'badge': ''
+            })
+        
+        # Sort by points descending
+        leaderboard.sort(key=lambda x: x['points'], reverse=True)
+        
+        # Take top 5 and assign ranks/badges
+        top_5 = leaderboard[:5]
+        for i, entry in enumerate(top_5):
+            entry['rank'] = i + 1
+            if i == 0: entry['badge'] = '🥇'
+            elif i == 1: entry['badge'] = '🥈'
+            elif i == 2: entry['badge'] = '🥉'
+            else: entry['badge'] = str(i + 1)
+        
+        return Response(top_5)
+    except Exception as e:
+        print(f"Error fetching leaderboard: {e}")
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_trending_topics(request):
+    try:
+        # Get courses with most enrollments (Roadmaps)
+        # For "trending", we could filter by recent creation date, but for now usage count is good
+        trending = Roadmap.objects.values('course__title').annotate(
+            learners=Count('id')
+        ).order_by('-learners')[:5]
+        
+        result = []
+        for item in trending:
+            # Mock growth for now as we don't have historical snapshots
+            # In prod, compare with last week's count
+            import random
+            growth = random.randint(5, 30)
+            
+            result.append({
+                'topic': item['course__title'],
+                'learners': item['learners'],
+                'growth': f"+{growth}%"
+            })
+            
+        return Response(result)
+    except Exception as e:
+        print(f"Error fetching trending topics: {e}")
+        return Response({'error': str(e)}, status=500)
 

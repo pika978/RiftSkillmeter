@@ -5,12 +5,13 @@ from .views import (
     RegisterView, login_view, logout_view, user_profile_view, hello_world,
     LearnerProfileView, CourseListView, CourseDetailView,
     RoadmapListCreateView, RoadmapDetailView, mark_concept_complete,
-    AssessmentDetailView, submit_assessment,
-    DailyTaskListView, complete_task,
-    NotificationListView, mark_notification_read, UserStatsView,
-    generate_roadmap_ai, generate_concept_notes, generate_concept_quiz,
-    ActivityLogView, LabListCreateView, LabDetailView, generate_certificate,
-    study_sessions_view, study_session_stats, verify_certificate
+    AssessmentDetailView, submit_assessment, complete_task,
+    mark_notification_read, generate_concept_notes, generate_concept_quiz,
+    LabListCreateView, LabDetailView, generate_certificate,
+    study_sessions_view, study_session_stats, verify_certificate,
+    generate_roadmap_ai, DailyTaskListView, NotificationListView, 
+    UserStatsView, ActivityLogView,
+    get_leaderboard, get_trending_topics
 )
 
 urlpatterns = [
@@ -34,6 +35,8 @@ urlpatterns = [
     path('roadmaps/<int:pk>/', RoadmapDetailView.as_view(), name='roadmap_detail'),
     path('roadmaps/<int:roadmap_id>/certificate/', generate_certificate, name='roadmap_certificate'),
     path('certificates/verify/<str:cert_id>/', verify_certificate, name='certificate_verify'),
+    path('leaderboard/', get_leaderboard, name='leaderboard'),
+    path('trending/', get_trending_topics, name='trending_topics'),
     
     path('concepts/<int:concept_id>/complete/', mark_concept_complete, name='concept_complete'),
     path('concepts/<int:concept_id>/generate-notes/', generate_concept_notes, name='concept_generate_notes'),

@@ -40,7 +40,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { icon: Flame, label: 'Day Streak', value: stats.currentStreak, color: 'text-orange-500' },
-            { icon: Trophy, label: 'Avg Score', value: `${stats.averageScore}%`, color: 'text-yellow-500' },
+            { icon: Trophy, label: 'Your Rank', value: stats.rank ? `#${stats.rank}` : 'N/A', color: 'text-yellow-500' },
             { icon: BookOpen, label: 'Minutes Learned', value: stats.totalMinutesLearned, color: 'text-primary' },
             { icon: CheckSquare, label: 'Courses', value: stats.totalCoursesEnrolled, color: 'text-success' },
           ].map((stat, i) => (
