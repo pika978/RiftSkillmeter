@@ -1,4 +1,4 @@
-<![CDATA[<div align="center">
+<div align="center">
   <img src="public/logo.png" alt="SkillMeter AI Logo" width="150"/>
   
   # 🎓 SkillMeter AI
