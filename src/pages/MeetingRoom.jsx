@@ -4,6 +4,7 @@ import { DashboardLayout } from '../components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CodeEditor } from '../components/ide/CodeEditor'; // Reusing your existing component
+import { CODE_SNIPPETS } from '@/api/piston';
 import { Video, Mic, MicOff, VideoOff, PhoneOff, MessageSquare, Code, Layout, Share2, MoreVertical, Settings } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -14,6 +15,16 @@ export default function MeetingRoom() {
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
     const [activeTab, setActiveTab] = useState('code'); // 'code', 'whiteboard'
+
+    // Code Editor state
+    const [language, setLanguage] = useState('javascript');
+    const [files, setFiles] = useState([
+        {
+            name: 'main.js',
+            language: 'javascript',
+            content: CODE_SNIPPETS['javascript'] || '// Start coding here...'
+        }
+    ]);
 
     const handleEndCall = () => {
         toast.info("Leaving meeting...");
@@ -79,7 +90,12 @@ export default function MeetingRoom() {
                     <div className="flex-1 bg-gray-50 relative">
                         {activeTab === 'code' ? (
                             <div className="absolute inset-0 p-0">
-                                <CodeEditor initialValue="// Start coding here..." language="javascript" />
+                                <CodeEditor
+                                    language={language}
+                                    setLanguage={setLanguage}
+                                    files={files}
+                                    setFiles={setFiles}
+                                />
                             </div>
                         ) : (
                             <div className="h-full flex items-center justify-center border-dashed border-2 border-gray-300 m-4">
