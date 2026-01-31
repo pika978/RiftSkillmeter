@@ -48,7 +48,7 @@ export default function Learn() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const API_URL = 'http://localhost:8000/api';
+  const API_URL = 'http://localhost:8001/api';
 
   // Generate notes on-demand when Notes tab is clicked
   const handleGenerateNotes = async (conceptId) => {

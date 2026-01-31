@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 
 const LearningContext = createContext(undefined);
-const API_URL = 'http://localhost:8000/api';
+const API_URL = 'http://localhost:8001/api';
 
 export function LearningProvider({ children }) {
     const { user, authFetch } = useAuth();

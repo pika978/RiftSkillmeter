@@ -38,7 +38,7 @@ export function DashboardLayout({ children }) {
   // Get sidebar links based on mentor status
   const sidebarLinks = getSidebarLinks(user?.isMentor);
 
-  return (<div className="h-screen overflow-hidden flex bg-background">
+  return (<div className="h-screen overflow-hidden flex bg-background landing-theme">
     {/* Sidebar - Desktop */}
     <aside className="hidden lg:flex flex-col border-r border-border bg-sidebar-background w-64 h-full shrink-0">
       {/* Logo Section */}
@@ -47,7 +47,7 @@ export function DashboardLayout({ children }) {
           <img
             src="/logo.png"
             alt="SkillMeter"
-            className="h-8 w-8 object-contain shrink-0 grayscale placeholder-opacity-100" // Grayscale logo
+            className="h-8 w-8 object-contain shrink-0" // Removed grayscale
           />
           <span className="font-heading font-bold text-xl tracking-tight">SkillMeter</span>
         </Link>
@@ -64,7 +64,7 @@ export function DashboardLayout({ children }) {
               className={cn(
                 'flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all border-2 rounded-none',
                 isActive
-                  ? 'bg-transparent text-black border-black shadow-[4px_4px_0px_0px_#000] -translate-y-[1px] -translate-x-[1px]' // Active: Outline, Shadow
+                  ? 'bg-primary text-white border-black shadow-[4px_4px_0px_0px_#000] -translate-y-[1px] -translate-x-[1px]' // Active: Blue Background, White Text
                   : 'text-muted-foreground border-transparent hover:text-black hover:border-black hover:shadow-[4px_4px_0px_0px_#000] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:bg-white' // Hover: Border, Shadow, Move
               )}
             >

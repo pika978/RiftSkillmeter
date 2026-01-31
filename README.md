@@ -1146,7 +1146,20 @@ python manage.py migrate
 python manage.py createsuperuser
 
 # Start development server
-python manage.py runserver
+python manage.py runserver 8001
+
+### 🛡️ Admin Dashboard
+
+The Django admin panel allows you to manage courses, users, and mentors directly.
+
+- **URL**: [http://localhost:8001/admin/](http://localhost:8001/admin/)
+- **Default Username**: `admin`
+- **Default Password**: `password123`
+
+To create your own superuser:
+```bash
+python manage.py createsuperuser
+```
 
 # OR with WebSocket support
 daphne -b 0.0.0.0 -p 8000 backend.asgi:application

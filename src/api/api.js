@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = 'http://localhost:8001/api';
 const TOKEN_KEY = 'skillmeter_tokens';
 
 const api = axios.create({

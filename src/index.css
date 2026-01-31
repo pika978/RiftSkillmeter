@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,11 +7,9 @@
 
 @layer base {
   :root {
-    /* Minimal Black & White Theme */
+    /* SkillMeterAi Original Theme (Minimal Black & White) */
     --background: 0 0% 100%;
-    /* Pure White */
     --foreground: 0 0% 0%;
-    /* Pure Black */
 
     --card: 0 0% 100%;
     --card-foreground: 0 0% 0%;
@@ -19,34 +18,25 @@
     --popover-foreground: 0 0% 0%;
 
     --primary: 0 0% 0%;
-    /* Black Primary */
     --primary-foreground: 0 0% 100%;
-    /* White Text */
 
     --secondary: 0 0% 96%;
-    /* Light Gray */
     --secondary-foreground: 0 0% 0%;
 
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 40%;
-    /* Medium Gray */
 
     --accent: 0 0% 90%;
     --accent-foreground: 0 0% 0%;
 
     --destructive: 0 0% 20%;
-    /* Dark Gray for destructive */
     --destructive-foreground: 0 0% 100%;
 
     --border: 0 0% 0%;
-    /* Black Borders */
     --input: 0 0% 0%;
-    /* Black Inputs */
     --ring: 0 0% 0%;
-    /* Black Rings */
 
     --radius: 0px;
-    /* Sharp lines */
 
     /* Sidebar specific */
     --sidebar-background: 0 0% 100%;
@@ -58,19 +48,25 @@
     --sidebar-border: 0 0% 0%;
     --sidebar-ring: 0 0% 0%;
 
-    /* Success / Warning - Keep minimal/desaturated */
+    /* Success / Warning */
     --success: 142 70% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
+
+    /* Shared/Merged Variables needed for Landing */
+    --void: 0 0% 0%;
+    --paper: 0 0% 100%;
+    --concrete: 0 0% 95%;
+    --verdict-pass: 145 100% 35%;
+    --verdict-fail: 0 100% 50%;
+    --highlight: 51 100% 50%;
   }
 
   .dark {
-    /* Inverted B&W for Dark Mode */
+    /* SkillMeterAi Dark Mode (Inverted B&W) */
     --background: 0 0% 0%;
-    /* Pure Black */
     --foreground: 0 0% 100%;
-    /* Pure White */
 
     --card: 0 0% 5%;
     --card-foreground: 0 0% 100%;
@@ -79,9 +75,7 @@
     --popover-foreground: 0 0% 100%;
 
     --primary: 0 0% 100%;
-    /* White Primary */
     --primary-foreground: 0 0% 0%;
-    /* Black Text */
 
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 100%;
@@ -96,7 +90,6 @@
     --destructive-foreground: 0 0% 100%;
 
     --border: 0 0% 20%;
-    /* Dark Gray Borders */
     --input: 0 0% 20%;
     --ring: 0 0% 100%;
 
@@ -109,6 +102,93 @@
     --sidebar-border: 0 0% 20%;
     --sidebar-ring: 0 0% 100%;
   }
+
+  /* 
+   * SCOPED THEME FOR LANDING PAGE 
+   * Restoring SkillChamberLanding Aesthetics (Blue/Yellow/Neo-Brutalist)
+   */
+  .landing-theme {
+    --void: 0 0% 0%;
+    --paper: 0 0% 100%;
+    --concrete: 0 0% 95%;
+
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    /* RESTORED: Electric Blue Primary */
+    --primary: 210 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    /* RESTORED: Bold Yellow Secondary */
+    --secondary: 51 100% 50%;
+    --secondary-foreground: 0 0% 0%;
+
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 210 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --verdict-pass: 145 100% 35%;
+    --verdict-fail: 0 100% 50%;
+    --highlight: 51 100% 50%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 0%;
+    --input: 0 0% 90%;
+    --ring: 210 100% 50%;
+
+    --radius: 0px;
+
+    /* Sidebar (if used in landing context) */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 210 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 95%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 0%;
+    --sidebar-ring: 210 100% 50%;
+  }
+
+  /* Dark mode overrides for landing theme */
+  .dark .landing-theme {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 210 100% 60%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 51 100% 60%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 210 100% 60%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 100%;
+    --input: 0 0% 20%;
+    --ring: 210 100% 60%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 210 100% 60%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: 210 100% 60%;
+  }
 }
 
 @layer base {
@@ -120,6 +200,7 @@
   body {
     @apply h-full antialiased bg-background text-foreground;
     font-family: 'Manrope', sans-serif;
+    /* Default app font */
   }
 
   h1,
@@ -132,7 +213,6 @@
     font-family: 'Manrope', sans-serif;
   }
 
-  /* Brutalist/Minimal Utilities */
   .border-b-w {
     @apply border border-border;
   }
@@ -166,4 +246,121 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--foreground) / 0.5);
+}
+
+@layer components {
+
+  /* Copy of SkillChamberLanding components for Landing Page */
+  .skill-card {
+    @apply relative border-4 border-border bg-card p-6;
+    box-shadow: 6px 6px 0 hsl(var(--foreground));
+  }
+
+  .skill-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0 hsl(var(--foreground));
+  }
+
+  .skill-card--verified::before {
+    content: '';
+    @apply absolute top-0 right-0 w-16 h-16;
+    background: hsl(var(--verdict-pass));
+    clip-path: polygon(100% 0, 0 0, 100% 100%);
+  }
+
+  .progress-bar {
+    @apply h-3 w-full overflow-hidden border-2 border-border;
+    background: hsl(var(--concrete));
+  }
+
+  .progress-fill {
+    @apply h-full;
+    background: hsl(var(--primary));
+  }
+
+  .btn-neural {
+    @apply inline-flex items-center justify-center font-display text-sm font-bold px-8 py-4 border-4 border-foreground;
+    background: hsl(var(--primary));
+    color: white;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    box-shadow: 6px 6px 0 hsl(var(--foreground));
+    transition: all 0.1s;
+  }
+
+  .btn-neural:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0 hsl(var(--foreground));
+  }
+
+  .btn-neural:active {
+    transform: translate(0, 0);
+    box-shadow: 4px 4px 0 hsl(var(--foreground));
+  }
+
+  .thick-border-left {
+    border-left: 6px solid hsl(var(--primary));
+    padding-left: 1.5rem;
+  }
+}
+
+@layer utilities {
+  .border-3 {
+    border-width: 3px;
+  }
+
+  .border-4 {
+    border-width: 4px;
+  }
+
+  .border-6 {
+    border-width: 6px;
+  }
+
+  .border-8 {
+    border-width: 8px;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .shadow-brutal {
+    box-shadow: 8px 8px 0 hsl(var(--foreground));
+  }
+
+  .shadow-brutal-sm {
+    box-shadow: 4px 4px 0 hsl(var(--foreground));
+  }
+
+  .shadow-brutal-lg {
+    box-shadow: 12px 12px 0 hsl(var(--foreground));
+  }
+
+  .geo-bg {
+    background: hsl(var(--background));
+    position: relative;
+  }
+
+  .geo-bg::before {
+    content: '';
+    position: absolute;
+    top: 10%;
+    right: 5%;
+    width: 200px;
+    height: 200px;
+    background: hsl(var(--highlight));
+    opacity: 0.1;
+  }
+
+  .geo-bg::after {
+    content: '';
+    position: absolute;
+    bottom: 15%;
+    left: 8%;
+    width: 150px;
+    height: 150px;
+    background: hsl(var(--primary));
+    opacity: 0.08;
+  }
 }

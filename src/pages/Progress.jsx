@@ -19,8 +19,8 @@ export default function Progress() {
         const headers = tokens.access ? { 'Authorization': `Bearer ${tokens.access}` } : {};
 
         const [leaderboardRes, trendingRes] = await Promise.all([
-          fetch('http://localhost:8000/api/leaderboard/', { headers }),
-          fetch('http://localhost:8000/api/trending/', { headers })
+          fetch('http://localhost:8001/api/leaderboard/', { headers }),
+          fetch('http://localhost:8001/api/trending/', { headers })
         ]);
 
         if (leaderboardRes.ok) setLeaderboard(await leaderboardRes.json());

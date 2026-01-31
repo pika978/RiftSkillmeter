@@ -33,7 +33,7 @@ const queryClient = new QueryClient();
 
 const App = () => {
   useEffect(() => {
-    fetch("http://localhost:8000/api/hello/")
+    fetch("http://localhost:8001/api/hello/")
       .then((res) => res.json())
       .then((data) => {
         console.log(data.message);

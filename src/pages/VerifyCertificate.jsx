@@ -41,7 +41,7 @@ export default function VerifyCertificate() {
 
         const verifyCert = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/api/certificates/verify/${certId}/`);
+                const response = await fetch(`http://localhost:8001/api/certificates/verify/${certId}/`);
                 if (!response.ok) {
                     throw new Error('Certificate not found or invalid');
                 }

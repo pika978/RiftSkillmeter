@@ -77,7 +77,7 @@ export function LabSidebar({ currentLabId, onSelectLab, onNewLab, onSaveLab }) {
                 <div className="flex gap-2">
                     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                         <DialogTrigger asChild>
-                            <Button size="sm" className="w-full bg-sidebar-foreground text-sidebar-background hover:bg-sidebar-foreground/90 gap-2 border border-transparent rounded-none">
+                            <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90 gap-2 border-2 border-black rounded-none shadow-brutal-sm hover:translate-y-[-1px] transition-all">
                                 <Plus className="w-4 h-4" /> New Lab
                             </Button>
                         </DialogTrigger>
@@ -107,7 +107,7 @@ export function LabSidebar({ currentLabId, onSelectLab, onNewLab, onSaveLab }) {
                     <Button
                         size="sm"
                         variant="outline"
-                        className="bg-transparent text-sidebar-foreground border-sidebar-foreground hover:bg-sidebar-foreground hover:text-sidebar-background gap-2 w-full rounded-none"
+                        className="bg-white text-black border-2 border-black hover:bg-secondary hover:text-black gap-2 w-full rounded-none shadow-brutal-sm disabled:opacity-50 disabled:shadow-none"
                         onClick={onSaveLab}
                         disabled={!currentLabId}
                     >
@@ -123,10 +123,10 @@ export function LabSidebar({ currentLabId, onSelectLab, onNewLab, onSaveLab }) {
                             key={lab.id}
                             onClick={() => onSelectLab(lab)}
                             className={cn(
-                                "group flex items-center justify-between p-2 cursor-pointer transition-colors border border-transparent select-none",
+                                "group flex items-center justify-between p-2 cursor-pointer transition-all border-2 mb-1 select-none",
                                 currentLabId === lab.id
-                                    ? "bg-sidebar-foreground text-sidebar-background" // Active: Black BG, White Text
-                                    : "text-muted-foreground hover:text-sidebar-foreground hover:border-sidebar-foreground" // Hover: Text Black, Border Black
+                                    ? "bg-primary text-white border-black shadow-brutal-sm -translate-y-[1px]" // Active: Blue BG, White Text, Shadow
+                                    : "text-muted-foreground border-transparent hover:text-black hover:border-black hover:bg-white" // Hover: Black Text, Black Border
                             )}
                         >
                             <div className="flex items-center gap-2 overflow-hidden">

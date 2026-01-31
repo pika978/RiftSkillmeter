@@ -39,10 +39,10 @@ export default function Dashboard() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { icon: Flame, label: 'Day Streak', value: stats.currentStreak, color: 'text-orange-500' },
-            { icon: Trophy, label: 'Your Rank', value: stats.rank ? `#${stats.rank}` : 'N/A', color: 'text-yellow-500' },
+            { icon: Flame, label: 'Day Streak', value: stats.currentStreak, color: 'text-secondary' }, // Yellow for streak
+            { icon: Trophy, label: 'Your Rank', value: stats.rank ? `#${stats.rank}` : 'N/A', color: 'text-primary' }, // Blue for rank
             { icon: BookOpen, label: 'Minutes Learned', value: stats.totalMinutesLearned, color: 'text-primary' },
-            { icon: CheckSquare, label: 'Courses', value: stats.totalCoursesEnrolled, color: 'text-success' },
+            { icon: CheckSquare, label: 'Courses', value: stats.totalCoursesEnrolled, color: 'text-verdict-pass' },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -95,7 +95,7 @@ export default function Dashboard() {
                     </div>
                     <Progress value={currentRoadmap.progress} className="h-2 border border-black rounded-none" />
                   </div>
-                  <Button onClick={() => navigate('/learn')} className="w-full rounded-none">
+                  <Button onClick={() => navigate('/learn')} className="w-full rounded-none btn-neural h-12">
                     Continue Learning <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
@@ -123,7 +123,7 @@ export default function Dashboard() {
                     className="flex items-center gap-3 p-3 border border-transparent hover:border-black hover:bg-transparent transition-all cursor-pointer group"
                     onClick={() => navigate('/learn')}
                   >
-                    <Icon className="h-5 w-5 text-black group-hover:scale-110 transition-transform" />
+                    <Icon className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
                     <span className="text-sm flex-1 font-medium">{task.title}</span>
                   </div>
                 );
@@ -146,7 +146,7 @@ export default function Dashboard() {
               <CardTitle>My Courses</CardTitle>
               <CardDescription>All your enrolled courses</CardDescription>
             </div>
-            <Button onClick={() => navigate('/onboarding')} variant="outline" size="sm" className="rounded-none border-black hover:bg-black hover:text-white">
+            <Button onClick={() => navigate('/onboarding')} variant="outline" size="sm" className="rounded-none border-black hover:bg-primary hover:text-white shadow-brutal-sm hover:shadow-brutal transition-all">
               <PlusCircle className="mr-2 h-4 w-4" />
               New Course
             </Button>
