@@ -40,7 +40,7 @@ export function WhyNow() {
                         Why Now
                     </span>
                     <h2 className="font-display text-5xl md:text-7xl font-black mt-6 mb-6 leading-tight">
-                        The Perfect Storm
+                        The Perfect Algorithm
                     </h2>
                     <p className="text-2xl font-body font-bold max-w-2xl border-l-6 border-background pl-6 opacity-90">
                         Three forces have converged to make skill verification inevitable.
