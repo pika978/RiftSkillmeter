@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     LearnerProfile, Course, Chapter, Concept, Roadmap, ConceptProgress,
     Assessment, AssessmentResult, DailyTask, Notification, UserProgress, Lab,
-    StudySession, NotificationLog, MentorProfile, MentorSlot, Booking
+    StudySession, NotificationLog, MentorProfile, MentorSlot, Booking,
+    AIInterviewSession, InterviewTranscriptEntry, AIPerformanceReport
 )
 
 @admin.register(LearnerProfile)
@@ -154,3 +155,71 @@ class BookingAdmin(admin.ModelAdmin):
     list_display = ('learner', 'mentor', 'topic', 'status', 'amount_paid', 'created_at')
     list_filter = ('status', 'created_at')
     search_fields = ('learner__username', 'mentor__user__username', 'topic')
+
+
+# AI Interview Admin
+class TranscriptEntryInline(admin.TabularInline):
+    model = InterviewTranscriptEntry
+    extra = 0
+    fields = ('sequence_number', 'speaker', 'text', 'timestamp')
+    readonly_fields = ('timestamp',)
+    ordering = ('sequence_number',)
+
+
+@admin.register(AIInterviewSession)
+class AIInterviewSessionAdmin(admin.ModelAdmin):
+    list_display = ('session_id', 'user', 'skill_topic', 'level', 'status', 'started_at', 'duration_seconds')
+    list_filter = ('status', 'level', 'started_at')
+    search_fields = ('user__username', 'skill_topic', 'session_id')
+    readonly_fields = ('session_id', 'started_at', 'created_at', 'updated_at')
+    fieldsets = (
+        ('Session Info', {
+            'fields': ('session_id', 'user', 'status', 'started_at', 'ended_at', 'duration_seconds')
+        }),
+        ('Interview Config', {
+            'fields': ('skill_topic', 'level', 'cv_text', 'system_prompt')
+        }),
+        ('Tavus Integration', {
+            'fields': ('tavus_persona_id', 'tavus_conversation_id', 'conversation_url')
+        }),
+    )
+    inlines = [TranscriptEntryInline]
+
+
+@admin.register(InterviewTranscriptEntry)
+class InterviewTranscriptEntryAdmin(admin.ModelAdmin):
+    list_display = ('session', 'sequence_number', 'speaker', 'text_preview', 'timestamp')
+    list_filter = ('speaker', 'timestamp')
+    search_fields = ('session__session_id', 'text')
+    readonly_fields = ('timestamp',)
+    
+    def text_preview(self, obj):
+        return obj.text[:100] + "..." if len(obj.text) > 100 else obj.text
+    text_preview.short_description = 'Text Preview'
+
+
+@admin.register(AIPerformanceReport)
+class AIPerformanceReportAdmin(admin.ModelAdmin):
+    list_display = ('session', 'overall_score', 'topic_knowledge_score', 'communication_score', 'generated_at')
+    list_filter = ('generated_at', 'overall_score')
+    search_fields = ('session__session_id', 'session__skill_topic')
+    readonly_fields = ('generated_at', 'overall_score')
+    fieldsets = (
+        ('Session', {
+            'fields': ('session',)
+        }),
+        ('Summary', {
+            'fields': ('performance_summary', 'recommendation')
+        }),
+        ('Detailed Feedback', {
+            'fields': ('strengths', 'improvements')
+        }),
+        ('Scores', {
+            'fields': (
+                'topic_knowledge_score', 
+                'communication_score', 
+                'problem_solving_score', 
+                'overall_score'
+            )
+        }),
+    )

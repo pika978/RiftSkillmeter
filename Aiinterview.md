@@ -997,7 +997,823 @@ This gives you:
 
 Would you like me to create a detailed implementation guide with actual code for this setup?
 
+---
 
+# 📋 COMPREHENSIVE IMPLEMENTATION PLAN
+
+## 🎯 Project Overview
+
+Build an **AI Interview System** that enables users to practice interviews with an AI-powered avatar. The system uses:
+- **Gemini 2.5 Flash Live API** for real-time conversational AI with native audio processing
+- **Tavus CVI (Conversational Video Interface)** for photorealistic avatar video rendering
+- **Daily.co WebRTC** for real-time audio/video streaming to the frontend
+
+---
+
+## 🏗️ Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Frontend** | React.js / Next.js | User interface |
+| **Backend** | Python FastAPI | API orchestration |
+| **Real-time Audio** | Gemini Live API | Native audio I/O, conversation logic |
+| **Avatar Rendering** | Tavus CVI + Echo Mode | Photorealistic video avatar |
+| **Streaming** | Daily.co WebRTC (via Tavus) | Low-latency audio/video |
+| **CV Parsing** | PyPDF2 / pdfplumber | Extract text from uploaded CVs |
+| **Database** | PostgreSQL (existing) | Store interview sessions & transcripts |
+
+---
+
+## 📁 Project Structure
+
+```
+backend/
+├── api/
+│   ├── interview/
+│   │   ├── __init__.py
+│   │   ├── routes.py           # Interview API endpoints
+│   │   ├── schemas.py          # Pydantic schemas
+│   │   ├── services.py         # Business logic
+│   │   └── websocket.py        # WebSocket handlers
+│   └── ...
+├── services/
+│   ├── gemini_live.py          # Gemini Live API client
+│   ├── tavus_client.py         # Tavus CVI client
+│   └── cv_parser.py            # CV text extraction
+├── config/
+│   └── interview_config.py     # API keys & settings
+└── ...
+
+src/
+├── pages/
+│   └── AIInterview/
+│       ├── index.jsx           # Main interview page
+│       ├── SetupForm.jsx       # Pre-interview form
+│       ├── InterviewRoom.jsx   # Live interview UI
+│       └── ResultsPage.jsx     # Post-interview summary
+├── components/
+│   └── interview/
+│       ├── AvatarVideo.jsx     # Tavus video embed
+│       ├── AudioCapture.jsx    # Microphone handling
+│       └── TranscriptPanel.jsx # Real-time transcript
+└── ...
+```
+
+---
+
+## 📝 IMPLEMENTATION TASKS
+
+### PHASE 0: Environment Setup & Configuration
+
+- [ ] **0.1** Create `.env` entries for API keys:
+  ```env
+  TAVUS_API_KEY=your_tavus_api_key
+  GEMINI_API_KEY=your_gemini_api_key
+  TAVUS_REPLICA_ID=default_replica_id
+  ```
+
+- [ ] **0.2** Install Python dependencies:
+  ```bash
+  pip install google-genai websockets aiohttp pdfplumber fastapi[all]
+  ```
+
+- [ ] **0.3** Install frontend dependencies:
+  ```bash
+  npm install @daily-co/daily-js
+  ```
+
+- [ ] **0.4** Create configuration module `backend/config/interview_config.py`:
+  ```python
+  import os
+  from pydantic_settings import BaseSettings
+
+  class InterviewConfig(BaseSettings):
+      tavus_api_key: str = os.getenv("TAVUS_API_KEY", "")
+      gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
+      tavus_replica_id: str = os.getenv("TAVUS_REPLICA_ID", "")
+      tavus_base_url: str = "https://tavusapi.com/v2"
+      
+      class Config:
+          env_file = ".env"
+  ```
+
+---
+
+### PHASE 1: Backend - Tavus Integration
+
+- [ ] **1.1** Create `backend/services/tavus_client.py`:
+  - [ ] Implement `TavusClient` class with async HTTP client
+  - [ ] Method: `create_persona(name, system_prompt)` → Creates persona for interviews
+  - [ ] Method: `create_conversation(replica_id, persona_id)` → Starts Tavus session
+  - [ ] Method: `send_audio(conversation_id, audio_base64)` → Echo Mode audio
+  - [ ] Method: `end_conversation(conversation_id)` → Cleanup
+
+- [ ] **1.2** Implement Tavus Persona Creation:
+  ```python
+  async def create_persona(self, name: str, system_prompt: str) -> dict:
+      response = await self.client.post(
+          f"{self.base_url}/personas",
+          headers={"x-api-key": self.api_key},
+          json={
+              "persona_name": name,
+              "system_prompt": system_prompt,
+              "layers": {
+                  "transport": {"microphone": False}  # Echo mode
+              }
+          }
+      )
+      return response.json()
+  ```
+
+- [ ] **1.3** Implement Tavus Conversation Creation:
+  ```python
+  async def create_conversation(self, replica_id: str, persona_id: str) -> dict:
+      response = await self.client.post(
+          f"{self.base_url}/conversations",
+          headers={"x-api-key": self.api_key},
+          json={
+              "replica_id": replica_id,
+              "persona_id": persona_id,
+              "conversation_name": f"Interview_{uuid.uuid4()}"
+          }
+      )
+      return response.json()  # Contains conversation_url for embedding
+  ```
+
+- [ ] **1.4** Implement Echo Mode audio sending:
+  ```python
+  async def send_audio(self, conversation_id: str, audio_base64: str) -> dict:
+      response = await self.client.post(
+          f"{self.base_url}/conversations/{conversation_id}/speak",
+          headers={"x-api-key": self.api_key},
+          json={"audio": audio_base64}
+      )
+      return response.json()
+  ```
+
+---
+
+### PHASE 2: Backend - Gemini Live API Integration
+
+- [ ] **2.1** Create `backend/services/gemini_live.py`:
+  - [ ] Implement `GeminiLiveClient` class
+  - [ ] Method: `connect(system_prompt)` → Establish WebSocket session
+  - [ ] Method: `send_audio(audio_bytes)` → Stream user audio
+  - [ ] Method: `receive_audio()` → Get LLM audio response
+  - [ ] Method: `disconnect()` → Close session
+
+- [ ] **2.2** Implement Gemini Live WebSocket Connection:
+  ```python
+  from google import genai
+
+  class GeminiLiveClient:
+      MODEL = "gemini-2.5-flash-native-audio-preview-12-2025"
+      
+      def __init__(self, api_key: str):
+          self.client = genai.Client(api_key=api_key)
+          self.session = None
+      
+      async def connect(self, system_prompt: str):
+          config = {
+              "response_modalities": ["AUDIO"],
+              "system_instruction": system_prompt,
+              "speech_config": {
+                  "voice_config": {
+                      "prebuilt_voice_config": {"voice_name": "Puck"}
+                  }
+              }
+          }
+          self.session = await self.client.aio.live.connect(
+              model=self.MODEL, config=config
+          )
+          return self.session
+  ```
+
+- [ ] **2.3** Implement audio streaming methods:
+  ```python
+  async def send_audio(self, audio_chunk: bytes, end_of_turn: bool = False):
+      await self.session.send(
+          {"data": audio_chunk, "mime_type": "audio/pcm"},
+          end_of_turn=end_of_turn
+      )
+  
+  async def receive_audio(self):
+      async for response in self.session.receive():
+          if response.server_content and response.server_content.model_turn:
+              for part in response.server_content.model_turn.parts:
+                  if part.inline_data:
+                      yield part.inline_data.data  # base64 audio
+  ```
+
+- [ ] **2.4** Handle conversation context and interview flow:
+  - [ ] Build interview system prompt template
+  - [ ] Include skill topic, level, and CV context
+  - [ ] Handle interview ending detection
+
+---
+
+### PHASE 3: Backend - CV Parser Service
+
+- [ ] **3.1** Create `backend/services/cv_parser.py`:
+  - [ ] Implement PDF text extraction with `pdfplumber`
+  - [ ] Support DOCX files with `python-docx`
+  - [ ] Return cleaned text summary (limit to 2000 chars)
+
+  ```python
+  import pdfplumber
+  from docx import Document
+  
+  class CVParser:
+      MAX_CHARS = 2000
+      
+      def parse(self, file_bytes: bytes, filename: str) -> str:
+          if filename.endswith('.pdf'):
+              return self._parse_pdf(file_bytes)
+          elif filename.endswith('.docx'):
+              return self._parse_docx(file_bytes)
+          return ""
+      
+      def _parse_pdf(self, file_bytes: bytes) -> str:
+          with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+              text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+          return text[:self.MAX_CHARS]
+      
+      def _parse_docx(self, file_bytes: bytes) -> str:
+          doc = Document(io.BytesIO(file_bytes))
+          text = "\n".join(para.text for para in doc.paragraphs if para.text)
+          return text[:self.MAX_CHARS]
+  ```
+
+- [ ] **3.3** Create System Prompt Builder with CV Integration:
+  ```python
+  # backend/services/prompt_builder.py
+  
+  def build_interview_prompt(skill_topic: str, level: str, cv_text: str = "") -> str:
+      """
+      Builds the system prompt for Gemini with CV context.
+      The AI will use CV details to ask personalized questions.
+      """
+      
+      cv_section = ""
+      if cv_text:
+          cv_section = f"""
+  CANDIDATE'S CV/RESUME:
+  ----------------------
+  {cv_text}
+  ----------------------
+  
+  CV-BASED INTERVIEW INSTRUCTIONS:
+  - Reference specific projects, skills, or experience from the CV naturally
+  - If CV mentions "{skill_topic}" experience, ask follow-up questions about those projects
+  - Use the candidate's name from the CV when addressing them
+  - Ask about career transitions or gaps visible in their work history
+  - Probe deeper into technologies/tools mentioned in the CV
+  - Connect CV experience to the interview topic wherever relevant
+  """
+      else:
+          cv_section = """
+  NO CV PROVIDED:
+  - Focus on general questions about the interview topic
+  - Assess fundamentals and theoretical knowledge
+  - Ask about hypothetical scenarios and problem-solving
+  - Learn about their background through the conversation itself
+  """
+      
+      return f"""
+  You are a professional interviewer conducting a {level.upper()} level interview.
+  
+  INTERVIEW TOPIC: {skill_topic}
+  
+  {cv_section}
+  
+  INTERVIEW GUIDELINES:
+  1. Start with a warm greeting and ask "Tell me about yourself"
+  2. Ask clear, relevant questions ONE AT A TIME
+  3. Wait for the candidate to finish before asking the next question
+  4. Be professional, encouraging, and supportive
+  5. Adapt difficulty based on their responses
+  6. For {level} level:
+     - Beginner: Focus on fundamentals, basic concepts, simple scenarios
+     - Intermediate: Include practical experience, design decisions, trade-offs
+     - Advanced: Deep technical discussions, architecture, edge cases, optimization
+  7. Duration: approximately 20-30 minutes (8-12 questions)
+  8. End with "Do you have any questions for me?"
+  
+  RESPONSE STYLE:
+  - Keep responses conversational and natural for audio output
+  - Use short, clear sentences
+  - Avoid technical jargon when explaining
+  - Be encouraging even when probing deeply
+  
+  Begin the interview now with your greeting.
+  """
+  ```
+
+- [ ] **3.4** Example: How CV Affects Interview Questions:
+  
+  **Sample CV Input:**
+  ```
+  Rahul Sharma | Backend Developer
+  Experience: 
+  - TechStart Inc (2023-2025): Built REST APIs using Django
+  - Freelance (2022-2023): Python automation scripts
+  Skills: Python, Django, FastAPI, PostgreSQL, Docker
+  Projects: E-commerce API, Real-time Chat Backend
+  ```
+  
+  **Gemini's Personalized Questions:**
+  | # | Question | CV Reference |
+  |---|----------|--------------|
+  | 1 | "Hi Rahul! Tell me about your backend journey." | Uses name |
+  | 2 | "I see you built an E-commerce API. What was the most challenging part?" | References project |
+  | 3 | "You've used both Django and FastAPI. How do you decide which to use?" | Compares CV skills |
+  | 4 | "Tell me about handling PostgreSQL at scale for your e-commerce project." | Connects tech + project |
+  | 5 | "I notice you transitioned from freelancing to full-time. What drove that?" | Career transition |
+
+---
+
+
+
+### PHASE 4: Backend - Interview API Endpoints
+
+- [ ] **4.1** Create `backend/api/interview/schemas.py`:
+  ```python
+  from pydantic import BaseModel
+  from typing import Optional
+  from enum import Enum
+  
+  class InterviewLevel(str, Enum):
+      BEGINNER = "beginner"
+      INTERMEDIATE = "intermediate"
+      ADVANCED = "advanced"
+  
+  class StartInterviewRequest(BaseModel):
+      skill_topic: str
+      level: InterviewLevel = InterviewLevel.INTERMEDIATE
+  
+  class StartInterviewResponse(BaseModel):
+      session_id: str
+      conversation_url: str  # Tavus Daily.co room URL
+      status: str
+  
+  class InterviewSummaryResponse(BaseModel):
+      session_id: str
+      duration_seconds: int
+      performance_summary: str
+      strengths: list[str]
+      improvements: list[str]
+  ```
+
+- [ ] **4.2** Create `backend/api/interview/routes.py`:
+  - [ ] `POST /api/interview/start` - Initialize interview session
+  - [ ] `POST /api/interview/{session_id}/upload-cv` - Upload CV (optional)
+  - [ ] `WebSocket /api/interview/{session_id}/stream` - Real-time audio
+  - [ ] `POST /api/interview/{session_id}/end` - End interview & get summary
+  - [ ] `GET /api/interview/{session_id}/transcript` - Get full transcript
+
+- [ ] **4.3** Implement Start Interview Endpoint:
+  ```python
+  @router.post("/start", response_model=StartInterviewResponse)
+  async def start_interview(
+      request: StartInterviewRequest,
+      cv_file: Optional[UploadFile] = File(None)
+  ):
+      session_id = str(uuid.uuid4())
+      
+      # Parse CV if provided
+      cv_text = ""
+      if cv_file:
+          cv_bytes = await cv_file.read()
+          cv_text = cv_parser.parse(cv_bytes, cv_file.filename)
+      
+      # Build system prompt
+      system_prompt = build_interview_prompt(
+          skill_topic=request.skill_topic,
+          level=request.level,
+          cv_text=cv_text
+      )
+      
+      # Create Tavus persona & conversation
+      persona = await tavus_client.create_persona(
+          f"Interviewer_{session_id}", system_prompt
+      )
+      conversation = await tavus_client.create_conversation(
+          config.tavus_replica_id, persona["persona_id"]
+      )
+      
+      # Initialize Gemini session
+      gemini_session = await gemini_client.connect(system_prompt)
+      
+      # Store session data
+      sessions[session_id] = {
+          "conversation_id": conversation["conversation_id"],
+          "gemini_session": gemini_session,
+          "skill_topic": request.skill_topic,
+          "level": request.level,
+          "started_at": datetime.now()
+      }
+      
+      return StartInterviewResponse(
+          session_id=session_id,
+          conversation_url=conversation["conversation_url"],
+          status="ready"
+      )
+  ```
+
+- [ ] **4.4** Implement WebSocket Audio Stream Handler:
+  ```python
+  @router.websocket("/stream/{session_id}")
+  async def interview_stream(websocket: WebSocket, session_id: str):
+      await websocket.accept()
+      session = sessions.get(session_id)
+      
+      try:
+          while True:
+              # Receive user audio
+              user_audio = await websocket.receive_bytes()
+              
+              # Send to Gemini
+              await session["gemini_session"].send_audio(user_audio, end_of_turn=True)
+              
+              # Get Gemini's response
+              async for gemini_audio in session["gemini_session"].receive_audio():
+                  # Send to Tavus for avatar rendering
+                  await tavus_client.send_audio(
+                      session["conversation_id"],
+                      base64.b64encode(gemini_audio).decode()
+                  )
+                  
+                  # Notify frontend
+                  await websocket.send_json({"type": "response_playing"})
+                  
+      except WebSocketDisconnect:
+          await cleanup_session(session_id)
+  ```
+
+- [ ] **4.5** Implement End Interview & Summary Generation:
+  ```python
+  @router.post("/{session_id}/end")
+  async def end_interview(session_id: str):
+      session = sessions.get(session_id)
+      
+      # Close Tavus conversation
+      await tavus_client.end_conversation(session["conversation_id"])
+      
+      # Generate summary using Gemini
+      summary_prompt = f"""
+      Based on the interview about {session['skill_topic']}:
+      Level: {session['level']}
+      
+      Provide a structured evaluation:
+      1. Overall performance assessment
+      2. Key strengths demonstrated  
+      3. Areas for improvement
+      4. Recommendation
+      
+      Be encouraging and constructive.
+      """
+      
+      summary = await gemini_client.generate_text(summary_prompt)
+      
+      # Cleanup
+      del sessions[session_id]
+      
+      return {"status": "completed", "summary": summary}
+  ```
+
+---
+
+### PHASE 5: Frontend - Interview Setup Page
+
+- [ ] **5.1** Create `src/pages/AIInterview/index.jsx`:
+  - [ ] Route setup for `/ai-interview`
+  - [ ] State management with useState/useReducer
+  - [ ] Navigate between Setup → Interview → Results
+
+- [ ] **5.2** Create `src/pages/AIInterview/SetupForm.jsx`:
+  ```jsx
+  const SetupForm = ({ onStart }) => {
+    const [skillTopic, setSkillTopic] = useState('');
+    const [level, setLevel] = useState('intermediate');
+    const [cvFile, setCvFile] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      setLoading(true);
+      
+      const formData = new FormData();
+      formData.append('skill_topic', skillTopic);
+      formData.append('level', level);
+      if (cvFile) formData.append('cv_file', cvFile);
+      
+      const response = await fetch('/api/interview/start', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      onStart(data);  // Pass session info to parent
+    };
+
+    return (
+      <form onSubmit={handleSubmit}>
+        <input 
+          placeholder="What skill/topic for interview?"
+          value={skillTopic}
+          onChange={(e) => setSkillTopic(e.target.value)}
+          required
+        />
+        
+        <input 
+          type="file" 
+          accept=".pdf,.docx"
+          onChange={(e) => setCvFile(e.target.files[0])}
+        />
+        
+        <select value={level} onChange={(e) => setLevel(e.target.value)}>
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+        
+        <button type="submit" disabled={loading || !skillTopic}>
+          {loading ? 'Preparing...' : 'Start Interview'}
+        </button>
+      </form>
+    );
+  };
+  ```
+
+- [ ] **5.3** Style the setup form with Neo-Brutalist theme (consistent with SkillMeterAI)
+
+---
+
+### PHASE 6: Frontend - Live Interview Room
+
+- [ ] **6.1** Create `src/pages/AIInterview/InterviewRoom.jsx`:
+  - [ ] Embed Tavus video using Daily.co iframe/SDK
+  - [ ] Audio capture from user microphone
+  - [ ] WebSocket connection to backend
+  - [ ] Real-time transcript display
+
+- [ ] **6.2** Implement Daily.co Iframe Embedding:
+  ```jsx
+  import DailyIframe from '@daily-co/daily-js';
+
+  const InterviewRoom = ({ sessionId, conversationUrl }) => {
+    const videoRef = useRef(null);
+    const wsRef = useRef(null);
+    
+    useEffect(() => {
+      // Embed Tavus/Daily video
+      const callFrame = DailyIframe.createFrame(videoRef.current, {
+        iframeStyle: { width: '100%', height: '100%' }
+      });
+      
+      callFrame.join({ url: conversationUrl });
+      
+      // Setup WebSocket for audio streaming
+      wsRef.current = new WebSocket(
+        `ws://localhost:8000/api/interview/stream/${sessionId}`
+      );
+      
+      return () => {
+        callFrame.destroy();
+        wsRef.current?.close();
+      };
+    }, [sessionId, conversationUrl]);
+
+    return (
+      <div className="interview-room">
+        <div ref={videoRef} className="avatar-video" />
+        <AudioCapture wsRef={wsRef} />
+        <button onClick={handleEndInterview}>End Interview</button>
+      </div>
+    );
+  };
+  ```
+
+- [ ] **6.3** Create `src/components/interview/AudioCapture.jsx`:
+  - [ ] Request microphone permission
+  - [ ] Capture audio using MediaRecorder API
+  - [ ] Send PCM audio chunks via WebSocket
+  - [ ] Handle Voice Activity Detection (VAD)
+
+- [ ] **6.4** Implement Audio Capture:
+  ```jsx
+  const AudioCapture = ({ wsRef }) => {
+    const [isRecording, setIsRecording] = useState(true);
+    
+    useEffect(() => {
+      let mediaRecorder;
+      
+      const startRecording = async () => {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { 
+            sampleRate: 16000, 
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true 
+          } 
+        });
+        
+        mediaRecorder = new MediaRecorder(stream, { 
+          mimeType: 'audio/webm;codecs=opus' 
+        });
+        
+        mediaRecorder.ondataavailable = (e) => {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            e.data.arrayBuffer().then(buffer => {
+              wsRef.current.send(buffer);
+            });
+          }
+        };
+        
+        mediaRecorder.start(250); // Send chunks every 250ms
+      };
+      
+      if (isRecording) startRecording();
+      
+      return () => mediaRecorder?.stop();
+    }, [isRecording, wsRef]);
+
+    return (
+      <div className="mic-indicator">
+        {isRecording ? '🎤 Listening...' : '🔇 Muted'}
+      </div>
+    );
+  };
+  ```
+
+- [ ] **6.5** Add real-time transcript panel (optional but recommended)
+
+---
+
+### PHASE 7: Frontend - Results Page
+
+- [ ] **7.1** Create `src/pages/AIInterview/ResultsPage.jsx`:
+  - [ ] Display interview summary
+  - [ ] Show strengths and areas for improvement
+  - [ ] Download transcript option
+  - [ ] Start new interview button
+
+- [ ] **7.2** Implement Results Display:
+  ```jsx
+  const ResultsPage = ({ summary, sessionId }) => {
+    return (
+      <div className="results-page">
+        <h1>Interview Complete! ✓</h1>
+        
+        <div className="summary-card">
+          <h2>Performance Summary</h2>
+          <p>{summary.performance_summary}</p>
+          
+          <h3>Strengths</h3>
+          <ul>
+            {summary.strengths.map((s, i) => <li key={i}>{s}</li>)}
+          </ul>
+          
+          <h3>Areas for Improvement</h3>
+          <ul>
+            {summary.improvements.map((a, i) => <li key={i}>{a}</li>)}
+          </ul>
+        </div>
+        
+        <div className="actions">
+          <button onClick={() => downloadTranscript(sessionId)}>
+            Download Transcript
+          </button>
+          <button onClick={() => window.location.reload()}>
+            Start New Interview
+          </button>
+        </div>
+      </div>
+    );
+  };
+  ```
+
+---
+
+### PHASE 8: Database Integration
+
+- [ ] **8.1** Create database models in `backend/api/models.py`:
+  ```python
+  class InterviewSession(models.Model):
+      id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+      user = models.ForeignKey(User, on_delete=models.CASCADE)
+      skill_topic = models.CharField(max_length=255)
+      level = models.CharField(max_length=20)
+      cv_text = models.TextField(blank=True)
+      started_at = models.DateTimeField(auto_now_add=True)
+      ended_at = models.DateTimeField(null=True)
+      duration_seconds = models.IntegerField(null=True)
+      transcript = models.JSONField(default=list)
+      summary = models.JSONField(default=dict)
+      
+  class Meta:
+      db_table = "interview_sessions"
+  ```
+
+- [ ] **8.2** Create database migrations:
+  ```bash
+  python manage.py makemigrations
+  python manage.py migrate
+  ```
+
+- [ ] **8.3** Update interview endpoints to persist session data
+
+---
+
+### PHASE 9: Testing & Quality Assurance
+
+- [ ] **9.1** Create unit tests for services:
+  - [ ] Test `TavusClient` with mocked HTTP responses
+  - [ ] Test `GeminiLiveClient` with mocked WebSocket
+  - [ ] Test `CVParser` with sample PDF/DOCX files
+
+- [ ] **9.2** Create integration tests:
+  - [ ] Test full interview flow: start → stream → end
+  - [ ] Test error handling (API failures, timeouts)
+
+- [ ] **9.3** Manual testing checklist:
+  - [ ] Start interview with skill topic only
+  - [ ] Start interview with CV upload
+  - [ ] Test all three interview levels
+  - [ ] Test microphone permissions
+  - [ ] Test interview ending and summary generation
+  - [ ] Test on Chrome, Firefox, Safari
+
+---
+
+### PHASE 10: Production Readiness
+
+- [ ] **10.1** Implement rate limiting for API endpoints
+- [ ] **10.2** Add error handling and retry logic for external APIs
+- [ ] **10.3** Configure CORS for production domain
+- [ ] **10.4** Add monitoring and logging (Sentry, structured logs)
+- [ ] **10.5** Document API endpoints with OpenAPI/Swagger
+- [ ] **10.6** Create user documentation/help section
+
+---
+
+## 🔑 API Keys Required
+
+| Service | Sign Up URL | Free Tier |
+|---------|-------------|-----------|
+| **Tavus** | https://platform.tavus.io | 25 mins/month |
+| **Google Gemini** | https://aistudio.google.com | 1500 req/day |
+| **Daily.co** | (via Tavus) | Included |
+
+---
+
+## ⚡ Quick Start Commands
+
+```bash
+# Backend
+cd backend
+pip install -r requirements.txt
+python manage.py runserver
+
+# Frontend  
+cd src
+npm install
+npm run dev
+```
+
+---
+
+## 📊 Estimated Development Timeline
+
+| Phase | Duration | Complexity |
+|-------|----------|------------|
+| Phase 0: Setup | 1-2 hours | Low |
+| Phase 1: Tavus | 3-4 hours | Medium |
+| Phase 2: Gemini | 4-5 hours | High |
+| Phase 3: CV Parser | 1-2 hours | Low |
+| Phase 4: API Endpoints | 4-6 hours | Medium |
+| Phase 5: Setup UI | 2-3 hours | Low |
+| Phase 6: Interview Room | 6-8 hours | High |
+| Phase 7: Results | 2-3 hours | Low |
+| Phase 8: Database | 2-3 hours | Medium |
+| Phase 9: Testing | 4-6 hours | Medium |
+| Phase 10: Production | 3-4 hours | Medium |
+
+**Total Estimated: 32-46 hours** (1-2 weeks part-time)
+
+---
+
+## 🚀 Next Steps
+
+1. **Sign up for Tavus API** at https://platform.tavus.io
+2. **Get Gemini API key** at https://aistudio.google.com  
+3. **Start with Phase 0** - Environment setup
+4. **Implement phases sequentially** - Each phase builds on the previous
+
+---
+
+> **Note**: Mark tasks as `[x]` when completed to track progress. For example:
+> - [x] **0.1** Create `.env` entries for API keys ✅
 
 
 

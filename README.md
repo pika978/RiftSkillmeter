@@ -148,7 +148,7 @@ flowchart TD
 | **Smart Content Discovery** | Automatic YouTube video integration based on topics |
 | **AI Notes Generation** | Auto-generated study notes for each concept |
 | **Dynamic Quiz Generation** | AI-created assessments with instant feedback |
-| **Mock Interview Simulator** | Real-time AI interviewer with voice recognition |
+| **AI Interview Room** | Fullscreen interview experience with Tavus AI avatar and real-time voice interaction |
 
 ### 📚 Learning Features
 | Feature | Description |
@@ -311,14 +311,16 @@ SkillMeterAi/
 │   ├── 📁 lib/                      # Utility functions
 │   │   └── utils.js                 # cn(), tailwind-merge helpers
 │   │
-│   ├── 📁 pages/                    # 19 Route Pages
+│   ├── 📁 pages/                    # 21 Route Pages
 │   │   ├── Dashboard.jsx            # Main dashboard with stats
+│   │   ├── GeminiLiveLab.jsx        # Gemini Live testing page
 │   │   ├── Index.jsx                # Root redirect
+│   │   ├── InterviewRoom.jsx        # Fullscreen AI Interview Room with Tavus avatar
 │   │   ├── Landing.jsx              # Public landing page
 │   │   ├── Learn.jsx                # Video + Notes + Quiz learning page
 │   │   ├── Login.jsx                # Login form
 │   │   ├── MeetingRoom.jsx          # Live mentor meeting room
-│   │   ├── MentorConnect.jsx        # Mentor marketplace + Mock Interview
+│   │   ├── MentorConnect.jsx        # Mentor marketplace + Interview launcher
 │   │   ├── MentorDashboard.jsx      # Mentor analytics dashboard
 │   │   ├── NotFound.jsx             # 404 page
 │   │   ├── Notifications.jsx        # Notification center

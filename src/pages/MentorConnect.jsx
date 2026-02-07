@@ -9,9 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Video, Mic, MessageSquare, Star, Clock, Calendar, CheckCircle2, Play, Pause, RefreshCw, Smartphone, Linkedin, Loader2, AlertCircle } from 'lucide-react';
+import { Search, Filter, Video, Star, Clock, Calendar, CheckCircle2, Play, Smartphone, Linkedin, Loader2, Sparkles, BrainCircuit } from 'lucide-react';
 import { toast } from 'sonner';
-import { useInterviewWebSocket } from '../hooks/useInterviewWebSocket';
+import { Label } from '@/components/ui/label';
 import api from '../api/api';
 
 // --- MOCK DATA ---
@@ -109,23 +109,12 @@ const TRENDING_ARTICLES = [
     { title: "Rust vs Go: The Final War", date: "Oct 05", tag: "Dev" },
 ];
 
-const INTERVIEW_TOPICS = [
-    { title: "Frontend (React)", count: "25 Qs", color: "bg-blue-100" },
-    { title: "Backend (Node)", count: "30 Qs", color: "bg-green-100" },
-    { title: "System Design", count: "15 Qs", color: "bg-purple-100" },
-    { title: "Behavioral", count: "20 Qs", color: "bg-orange-100" },
-    { title: "DSA & Algos", count: "40 Qs", color: "bg-red-100" },
-];
-
-
 export default function MentorConnect() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('find-mentors');
     const [filter, setFilter] = useState('');
     const [selectedTopic, setSelectedTopic] = useState("Behavioral");
     const [experienceLevel, setExperienceLevel] = useState("mid");
-
-    const [simulationDuration, setSimulationDuration] = useState("15");
     const [resumeFile, setResumeFile] = useState(null);
     const fileInputRef = useRef(null);
 
@@ -143,28 +132,6 @@ export default function MentorConnect() {
         }
     };
 
-    // WebSocket Hook for Real-Time Interview
-    const {
-        isConnected: wsConnected,
-        currentQuestion: wsQuestion,
-        interviewReport: wsReport,
-        isLoading: wsLoading,
-        error: wsError,
-        connect: wsConnect,
-        initSession,
-        submitAnswer,
-        endSession: wsEndSession,
-        reset: wsReset
-    } = useInterviewWebSocket();
-
-    // Fallback to local state if WebSocket not connected
-    const [localQuestion, setLocalQuestion] = useState("Waiting to start...");
-    const [localReport, setLocalReport] = useState(null);
-
-    // Use WebSocket data if connected, otherwise use local fallback
-    const activeQuestion = wsConnected ? wsQuestion : localQuestion;
-    const interviewReport = wsConnected ? wsReport : localReport;
-
     // Mentor Data State
     const [mentors, setMentors] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -181,24 +148,18 @@ export default function MentorConnect() {
         const fetchMentors = async () => {
             try {
                 const res = await api.get('/mentors/');
-                // Backend returns: 
-                // { id, user: {first, last, email}, title, company, hourlyRate, about, skills, image... }
-                // Map to UI shape if needed, or use directly.
-                // Let's assume backend serializer structure is flat enough or we adapt here.
-
                 const mapped = res.data.map(m => ({
                     id: m.id,
                     name: `${m.firstName} ${m.lastName}`,
                     role: m.title,
                     company: m.company,
-                    // Use dicebear if no image provided
                     image: `https://api.dicebear.com/7.x/lorelei/svg?seed=${m.firstName}`,
                     skills: m.skills || [],
                     rating: m.averageRating || 5.0,
-                    reviews: 0, // Not yet in backend
-                    price: `₹${m.hourlyRate}/min`, // Ensure backend sends per-min or we calc
-                    availability: 'Flexible', // Placeholder
-                    color: 'bg-[#4ecdc4]', // Cyclic or random colors
+                    reviews: 0,
+                    price: `₹${m.hourlyRate}/min`,
+                    availability: 'Flexible',
+                    color: 'bg-[#4ecdc4]',
                     linkedin: '#'
                 }));
                 setMentors(mapped);
@@ -220,7 +181,6 @@ export default function MentorConnect() {
         const fetchMySessions = async () => {
             try {
                 const res = await api.get('/bookings/my-sessions/');
-                // Map backend data
                 const mapped = res.data.map(b => ({
                     id: b.id,
                     mentor_name: b.mentorName || "Unknown Mentor",
@@ -245,45 +205,10 @@ export default function MentorConnect() {
         setIsBookingOpen(true);
     };
 
-    // Interview Simulator State
-    const [isInterviewActive, setIsInterviewActive] = useState(false);
-    const [isRecordingAnswer, setIsRecordingAnswer] = useState(false);
-    const [recordingTime, setRecordingTime] = useState(0);
-    const [transcript, setTranscript] = useState("");
-    const videoRef = useRef(null);
-    const recognitionRef = useRef(null);
-
-    // Initialize Speech Recognition
+    // Reset state when topic changes (if needed for simplified logic)
     useEffect(() => {
-        if ('webkitSpeechRecognition' in window) {
-            const recognition = new window.webkitSpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
-
-            recognition.onresult = (event) => {
-                let finalTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    }
-                }
-                if (finalTranscript) {
-                    setTranscript(prev => prev + " " + finalTranscript);
-                }
-            };
-
-            recognitionRef.current = recognition;
-        }
-    }, []);
-
-    // Reset state when topic changes
-    useEffect(() => {
-        setIsInterviewActive(false);
-        setLocalQuestion("Waiting to start...");
-        setLocalReport(null);
-        wsReset();
-    }, [selectedTopic, wsReset]);
+        // No local state to reset anymore
+    }, [selectedTopic]);
 
     // Filter Mentors
     const filteredMentors = mentors.filter(m =>
@@ -291,135 +216,26 @@ export default function MentorConnect() {
         m.skills.some(s => s.toLowerCase().includes(filter.toLowerCase()))
     );
 
-    // Webcam Handling
-    useEffect(() => {
-        let stream = null;
-        if (isInterviewActive && videoRef.current) {
-            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-                .then(s => {
-                    stream = s;
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                    }
-                })
-                .catch(err => toast.error("Camera access denied or missing."));
-        }
-        return () => {
-            if (stream) stream.getTracks().forEach(track => track.stop());
-        };
-    }, [isInterviewActive]);
-
-    // Timer
-    useEffect(() => {
-        let interval;
-        if (isInterviewActive) {
-            interval = setInterval(() => setRecordingTime(prev => prev + 1), 1000);
-        }
-        return () => clearInterval(interval);
-    }, [isInterviewActive]);
-
-    const startInterview = async () => {
-        setRecordingTime(0);
-        setIsInterviewActive(true);
-        setLocalReport(null);
-        setTranscript("");
-
-        // Try WebSocket first
-        if (!wsConnected) {
-            wsConnect();
-            // Wait a bit for connection
-            await new Promise(resolve => setTimeout(resolve, 500));
+    const startInterview = () => {
+        if (!selectedTopic) {
+            toast.error("Please enter a topic first.");
+            return;
         }
 
-        // Get user ID from localStorage if available
-        const userData = localStorage.getItem('user');
-        const userId = userData ? JSON.parse(userData).id : null;
-
-        if (wsConnected) {
-            // Real-time AI Interview via WebSocket
-            initSession(selectedTopic, experienceLevel, parseInt(simulationDuration), userId);
-            toast.success("Connecting to AI Interviewer...");
-        } else {
-            // Fallback to local simulation
-            setLocalQuestion(`Hello! I see you're interested in ${selectedTopic}. Let's start with a brief introduction.`);
-            toast.success("Interview session started. Good luck!");
-        }
-    };
-
-    const startRecordingAnswer = () => {
-        setIsRecordingAnswer(true);
-        setTranscript("");
-        if (recognitionRef.current) {
-            try {
-                recognitionRef.current.start();
-            } catch (e) {
-                console.error("Speech recognition error:", e);
+        navigate('/interview-room', {
+            state: {
+                topic: selectedTopic,
+                level: experienceLevel,
+                resume: resumeFile
             }
-        }
-    };
-
-    const stopRecordingAnswer = () => {
-        setIsRecordingAnswer(false);
-        if (recognitionRef.current) {
-            try {
-                recognitionRef.current.stop();
-            } catch (e) {
-                console.error("Speech recognition stop error:", e);
-            }
-        }
-
-        // Send answer to backend
-        if (wsConnected) {
-            const answerText = transcript.trim() || "(No speech detected)";
-            submitAnswer(answerText);
-            toast.info("Answer submitted. Processing...");
-        } else {
-            // Local fallback simulation
-            toast.info("Processing answer...");
-            setTimeout(() => {
-                setLocalQuestion("That's interesting. Can you elaborate on the trade-offs?");
-            }, 1000);
-        }
-    };
-
-    const endInterviewSession = () => {
-        setIsInterviewActive(false);
-        setIsRecordingAnswer(false);
-        if (recognitionRef.current) {
-            try {
-                recognitionRef.current.stop();
-            } catch (e) { }
-        }
-
-        if (wsConnected) {
-            // End WebSocket session - will trigger analysis
-            wsEndSession();
-            toast.info("AI is analyzing your performance...");
-        } else {
-            // Local fallback simulation
-            toast.info("Analyzing interview performance...");
-            setTimeout(() => {
-                setLocalReport({
-                    score: 82,
-                    feedback: "Strong technical understanding but work on conciseness.",
-                    strengths: ["React Hooks knowledge", "System Design approach"],
-                    weaknesses: ["Explanation of useEffect was vague", "Missed error handling in code"],
-                    transcript: "Interviewer: What is a Hook?\nUser: A hook is..."
-                });
-                toast.success("Performance Report Ready!");
-            }, 1500);
-        }
-    };
-
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+        });
+        toast.info("Launching Interview Room...");
     };
 
     return (
         <DashboardLayout>
             <div className={activeTab === 'find-mentors' ? "h-[170vh] flex flex-col overflow-hidden font-sans" : "space-y-6 max-w-7xl mx-auto px-4 lg:px-8 pb-12 font-sans"}>
+
                 {/* Header Section */}
                 <div className="flex-none flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-4 border-black pb-4 mb-6">
                     <div style={{ perspective: '1000px' }}>
@@ -433,7 +249,7 @@ export default function MentorConnect() {
                                 className="origin-top"
                             >
                                 <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase mb-2" style={{ fontFamily: '"Comic Sans MS", "Chalkboard SE", "Comic Neue", sans-serif' }}>
-                                    {activeTab === 'find-mentors' ? 'Mentor Connect' : activeTab === 'my-sessions' ? 'Sessions with Mentor' : 'Mock Interview'}
+                                    {activeTab === 'find-mentors' ? 'Mentor Connect' : activeTab === 'my-sessions' ? 'Sessions with Mentor' : 'AI Mock Interview'}
                                 </h1>
                                 <p className="text-lg font-bold text-gray-600 bg-yellow-300 inline-block px-2 border-2 border-black shadow-[4px_4px_0px_0px_#000]">
                                     {activeTab === 'find-mentors'
@@ -479,117 +295,58 @@ export default function MentorConnect() {
                                 </TabsTrigger>
                             </TabsList>
 
-                            {/* New Trending Articles / Topics Component */}
-                            {activeTab !== 'my-sessions' && (
-                                <div className="border-2 border-black bg-white shadow-[6px_6px_0px_0px_#ff0000] min-h-[550px] flex flex-col">
-                                    <div className="bg-black text-white p-3 border-b-2 border-black flex-none">
-                                        <h3 className="font-black text-xl uppercase tracking-widest text-center">
-                                            {activeTab === 'find-mentors' ? 'Trending' : 'Interview Settings'}
-                                        </h3>
-                                    </div>
-                                    <div className="p-4 flex-1 overflow-y-auto">
-                                        <ul className="space-y-4">
-                                            {activeTab === 'find-mentors' ? (
-                                                TRENDING_ARTICLES.map((article, i) => (
-                                                    <li key={i} className="group cursor-pointer">
-                                                        <div className="flex justify-between items-start mb-1">
-                                                            <Badge className="rounded-none bg-black text-white hover:bg-black border border-black text-[10px] px-1 py-0 uppercase">
-                                                                {article.tag}
-                                                            </Badge>
-                                                            <span className="text-xs font-bold text-gray-500">{article.date}</span>
-                                                        </div>
-                                                        <h4 className="font-bold leading-tight group-hover:text-[#ff0000] transition-colors line-clamp-2">
-                                                            {article.title}
-                                                        </h4>
-                                                        <div className="h-0.5 w-full bg-gray-200 mt-3 group-hover:bg-[#ff0000] transition-colors" />
-                                                    </li>
-                                                ))
-                                            ) : (
-                                                <div className="space-y-8">
-                                                    {/* Interview Topic Input */}
-                                                    <div className="space-y-3">
-                                                        <label className="text-xs font-black uppercase tracking-wider text-black">Enter Interview Topic</label>
-                                                        <Input
-                                                            value={selectedTopic}
-                                                            onChange={(e) => setSelectedTopic(e.target.value)}
-                                                            className="h-12 rounded-none border-2 border-black font-bold uppercase bg-gray-50 focus-visible:ring-0 focus-visible:bg-white transition-all shadow-[2px_2px_0px_0px_#ccc] focus:shadow-[4px_4px_0px_0px_#000]"
-                                                            placeholder="E.g. React, System Design"
-                                                        />
-                                                    </div>
-
-                                                    {/* Resume Upload */}
-                                                    <div className="space-y-3">
-                                                        <label className="text-xs font-black uppercase tracking-wider text-black">Upload Resume</label>
-
-                                                        {/* Hidden Real Input */}
-                                                        <input
-                                                            type="file"
-                                                            ref={fileInputRef}
-                                                            onChange={handleFileChange}
-                                                            className="hidden"
-                                                            accept=".pdf,.doc,.docx"
-                                                        />
-
-                                                        {/* Custom Upload Trigger */}
-                                                        <div
-                                                            onClick={() => fileInputRef.current?.click()}
-                                                            className="h-14 flex items-center border-2 border-black cursor-pointer bg-white hover:bg-gray-50 transition-colors shadow-[2px_2px_0px_0px_#ccc] hover:shadow-[1px_1px_0px_0px_#ccc] hover:translate-x-[1px] hover:translate-y-[1px]"
-                                                        >
-                                                            {/* Fake Button */}
-                                                            <div className="bg-black text-white h-full px-4 flex items-center justify-center font-black uppercase text-xs tracking-wider shrink-0">
-                                                                Choose File
-                                                            </div>
-
-                                                            {/* File Name or Placeholder */}
-                                                            <div className="flex-1 px-4 font-bold uppercase text-xs truncate text-gray-500">
-                                                                {resumeFile ? (
-                                                                    <span className="text-black">{resumeFile.name}</span>
-                                                                ) : (
-                                                                    "No file chosen"
-                                                                )}
-                                                            </div>
-
-                                                            {/* Remove Button (Only if file selected) */}
-                                                            {resumeFile && (
-                                                                <div
-                                                                    onClick={handleRemoveFile}
-                                                                    className="h-full px-4 flex items-center justify-center border-l-2 border-black hover:bg-red-500 hover:text-white transition-colors"
-                                                                >
-                                                                    <span className="font-black">X</span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Interview Level Selector */}
-                                                    <div className="space-y-3">
-                                                        <label className="text-xs font-black uppercase tracking-wider text-black">Select Experience Level</label>
-                                                        <Select value={experienceLevel} onValueChange={setExperienceLevel}>
-                                                            <SelectTrigger className="h-12 rounded-none border-2 border-black font-bold uppercase shadow-[4px_4px_0px_0px_#000] hover:shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all bg-white">
-                                                                <SelectValue placeholder="Select Level" />
-                                                            </SelectTrigger>
-                                                            <SelectContent className="rounded-none border-2 border-black font-bold uppercase">
-                                                                <SelectItem value="junior">Beginner</SelectItem>
-                                                                <SelectItem value="mid">Intermediate</SelectItem>
-                                                                <SelectItem value="senior">Advanced</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </ul>
-                                    </div>
-                                    <div className="p-3 border-t-2 border-black bg-gray-50 flex-none text-center">
-                                        <a href="#" className="font-bold text-sm uppercase tracking-wider underline hover:text-[#ff0000]">
-                                            {activeTab === 'find-mentors' ? 'View All News →' : 'View All Topics →'}
-                                        </a>
-                                    </div>
+                            {/* Trending / Tips Sidebar */}
+                            {/* Keep it simple: Always show Trending/News for now, or specific tips if simulator */}
+                            <div className="border-2 border-black bg-white shadow-[6px_6px_0px_0px_#ff0000] min-h-[400px] flex flex-col">
+                                <div className="bg-black text-white p-3 border-b-2 border-black flex-none">
+                                    <h3 className="font-black text-xl uppercase tracking-widest text-center">
+                                        {activeTab === 'simulator' ? 'Pro Tips' : 'Trending'}
+                                    </h3>
                                 </div>
-                            )}
+                                <div className="p-4 flex-1 overflow-y-auto">
+                                    {activeTab === 'simulator' ? (
+                                        <div className="space-y-4 text-sm font-bold">
+                                            <div className="p-2 border-2 border-black bg-yellow-100 shadow-[2px_2px_0px_0px_#000]">
+                                                Use the STAR method: Situation, Task, Action, Result.
+                                            </div>
+                                            <div className="p-2 border-2 border-black bg-green-100 shadow-[2px_2px_0px_0px_#000]">
+                                                Speak clearly and maintain eye contact with the camera.
+                                            </div>
+                                            <div className="p-2 border-2 border-black bg-blue-100 shadow-[2px_2px_0px_0px_#000]">
+                                                Review your transcript after the session to improve.
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <ul className="space-y-4">
+                                            {TRENDING_ARTICLES.map((article, i) => (
+                                                <li key={i} className="group cursor-pointer">
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <Badge className="rounded-none bg-black text-white hover:bg-black border border-black text-[10px] px-1 py-0 uppercase">
+                                                            {article.tag}
+                                                        </Badge>
+                                                        <span className="text-xs font-bold text-gray-500">{article.date}</span>
+                                                    </div>
+                                                    <h4 className="font-bold leading-tight group-hover:text-[#ff0000] transition-colors line-clamp-2">
+                                                        {article.title}
+                                                    </h4>
+                                                    <div className="h-0.5 w-full bg-gray-200 mt-3 group-hover:bg-[#ff0000] transition-colors" />
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                                <div className="p-3 border-t-2 border-black bg-gray-50 flex-none text-center">
+                                    <a href="#" className="font-bold text-sm uppercase tracking-wider underline hover:text-[#ff0000]">
+                                        View All {activeTab === 'simulator' ? 'Tips' : 'News'} →
+                                    </a>
+                                </div>
+                            </div>
                         </div>
 
                         {/* RIGHT COLUMN: Content Area */}
                         <div className={activeTab === 'find-mentors' ? "flex-1 w-full min-w-0 h-full flex flex-col" : "flex-1 w-full min-w-0"}>
+
+                            {/* TAB: FIND MENTORS */}
                             <TabsContent value="find-mentors" className="flex-1 flex flex-col min-h-0 mt-0 data-[state=active]:flex">
                                 {/* Search Bar - Fixed */}
                                 <div className="flex-none flex gap-0 group shadow-[6px_6px_0px_0px_#4ecdc4] mb-6">
@@ -662,7 +419,7 @@ export default function MentorConnect() {
                                                                     className="rounded-none border-2 border-black bg-black text-white hover:bg-[#ff00ff] hover:text-white font-bold tracking-wider uppercase shadow-[3px_3px_0px_0px_#888] hover:shadow-[1px_1px_0px_0px_#000] hover:translate-y-[2px] transition-all"
                                                                     onClick={() => handleConnect(mentor)}
                                                                 >
-                                                                    Connect Now
+                                                                    Connect
                                                                 </Button>
                                                             </div>
                                                         </CardContent>
@@ -674,6 +431,7 @@ export default function MentorConnect() {
                                 </div>
                             </TabsContent>
 
+                            {/* TAB: MY SESSIONS */}
                             <TabsContent value="my-sessions" className="flex-1 flex flex-col min-h-0 mt-0 data-[state=active]:flex overflow-y-auto">
                                 <div className="max-w-4xl mx-auto w-full space-y-8">
                                     {/* Latest / Pending Request */}
@@ -750,236 +508,96 @@ export default function MentorConnect() {
                                 </div>
                             </TabsContent>
 
-                            <TabsContent value="simulator" className="flex-1 flex flex-col min-h-0 mt-0 overflow-y-auto pr-4 pb-4 border-2 border-transparent data-[state=active]:flex">
-                                {/* ... existing simulator code ... */}
-                                <div className="grid lg:grid-cols-3 gap-6">
-                                    {/* Left: Video & Controls */}
-                                    <div className="lg:col-span-2 space-y-6">
-                                        <Card className="rounded-none border-2 border-black shadow-[8px_8px_0px_0px_#adfa1d] overflow-hidden bg-black">
-                                            {/* Header with Level Selector */}
-                                            <div className="bg-white p-3 border-b-2 border-black flex justify-between items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
-                                                    <span className="font-black text-xs uppercase tracking-wider">Live Simulation</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold text-gray-500 uppercase">Duration:</span>
-                                                    <Select value={simulationDuration} onValueChange={setSimulationDuration} disabled={isInterviewActive}>
-                                                        <SelectTrigger className="h-7 w-[80px] rounded-none border-2 border-black text-xs font-bold uppercase shadow-[2px_2px_0px_0px_#000]">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="rounded-none border-2 border-black font-bold uppercase">
-                                                            <SelectItem value="2">2 Min (Quick)</SelectItem>
-                                                            <SelectItem value="3">3 Min</SelectItem>
-                                                            <SelectItem value="5">5 Min</SelectItem>
-                                                            <SelectItem value="10">10 Min</SelectItem>
-                                                            <SelectItem value="15">15 Min</SelectItem>
-                                                            <SelectItem value="20">20 Min</SelectItem>
-                                                            <SelectItem value="30">30 Min</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold text-gray-500 uppercase">Level:</span>
-                                                    <Select value={experienceLevel} onValueChange={setExperienceLevel} disabled={isInterviewActive}>
-                                                        <SelectTrigger className="h-7 w-[100px] rounded-none border-2 border-black text-xs font-bold uppercase shadow-[2px_2px_0px_0px_#000]">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="rounded-none border-2 border-black font-bold uppercase">
-                                                            <SelectItem value="junior">Junior</SelectItem>
-                                                            <SelectItem value="mid">Mid-Level</SelectItem>
-                                                            <SelectItem value="senior">Senior</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            </div>
-
-                                            {/* Split Screen Video Area */}
-                                            <div className="relative aspect-video flex bg-gray-900 border-b-2 border-white">
-                                                <div className="w-1/2 border-r-2 border-white relative flex items-center justify-center bg-gray-800">
-                                                    <div className="text-center space-y-2 opacity-50">
-                                                        <div className="h-16 w-16 mx-auto rounded-full bg-black border-2 border-white flex items-center justify-center">
-                                                            <Smartphone className="h-8 w-8 text-white" />
-                                                        </div>
-                                                        <p className="text-[10px] font-mono text-white uppercase tracking-widest">AI Interviewer</p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Right: User Webcam */}
-                                                <div className="w-1/2 relative overflow-hidden">
-                                                    {isInterviewActive ? (
-                                                        <>
-                                                            <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover transform scale-x-[-1]" />
-                                                            <div className="absolute top-2 left-2 bg-[#ff0000] text-white px-2 py-0.5 font-mono text-[10px] font-bold flex items-center gap-1 border border-white shadow-[2px_2px_0px_0px_#000]">
-                                                                REC {formatTime(recordingTime)}
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-500 space-y-2">
-                                                            <Video className="h-8 w-8" />
-                                                            <p className="font-mono text-[10px] uppercase tracking-widest">Camera Off</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Controls */}
-                                            <div className="p-4 bg-white border-t-2 border-black flex justify-between items-center">
-                                                <div className="flex gap-3">
-                                                    <div className={`flex items-center gap-2 px-3 py-1.5 border-2 border-black text-xs font-black uppercase transition-colors ${isInterviewActive ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}>
-                                                        <Mic className="h-3 w-3" /> {isInterviewActive ? 'Listening' : 'Mic Off'}
-                                                    </div>
-                                                </div>
-                                                {!isInterviewActive ? (
-                                                    <Button onClick={startInterview} className="rounded-none border-2 border-black bg-[#adfa1d] hover:bg-[#8ce000] text-black font-black text-sm uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] transition-all">
-                                                        <Play className="mr-2 h-4 w-4" /> Start Interview
-                                                    </Button>
-                                                ) : (
-                                                    <Button onClick={endInterviewSession} className="rounded-none border-2 border-black bg-[#ff0000] text-white hover:bg-[#cc0000] font-black text-sm uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] transition-all">
-                                                        <CheckCircle2 className="mr-2 h-4 w-4" /> End Session
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </Card>
-
-                                        {/* Question Board */}
-                                        {/* Question Board (Or Report) */}
-                                        {interviewReport ? (
-                                            <Card className="rounded-none border-2 border-black shadow-[6px_6px_0px_0px_#adfa1d] bg-black text-white">
-                                                <CardHeader className="border-b-2 border-white bg-black py-4">
-                                                    <CardTitle className="flex justify-between items-center text-xl font-black uppercase tracking-wider text-white">
-                                                        <span>Performance Report</span>
-                                                        <Badge className="bg-[#adfa1d] text-black border-2 border-white text-lg px-3 rounded-none">
-                                                            Score: {interviewReport.score}/100
-                                                        </Badge>
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="p-8 text-left bg-gray-900 min-h-[300px] space-y-6">
-                                                    <div>
-                                                        <h3 className="font-black uppercase text-[#adfa1d] mb-2 text-lg">Overall Feedback</h3>
-                                                        <p className="font-mono text-sm leading-relaxed text-gray-300 border-l-4 border-[#adfa1d] pl-4">
-                                                            "{interviewReport.feedback}"
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-2 gap-8">
-                                                        <div>
-                                                            <h4 className="font-bold uppercase text-green-400 mb-2 flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Strengths</h4>
-                                                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-300 font-mono">
-                                                                {interviewReport.strengths.map((s, i) => <li key={i}>{s}</li>)}
-                                                            </ul>
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-bold uppercase text-red-400 mb-2 flex items-center gap-2"><Star className="h-4 w-4" /> Areas to Improve</h4>
-                                                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-300 font-mono">
-                                                                {interviewReport.weaknesses.map((w, i) => <li key={i}>{w}</li>)}
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="pt-6 border-t border-gray-700 flex justify-between items-center">
-                                                        <div className="text-xs text-gray-500 font-mono uppercase">Full Transcript Available</div>
-                                                        <div className="flex gap-4">
-                                                            <Button onClick={startInterview} variant="outline" className="rounded-none border-2 border-white text-white hover:bg-white hover:text-black font-bold uppercase transition-all">
-                                                                <RefreshCw className="mr-2 h-4 w-4" /> Retry
-                                                            </Button>
-                                                            <Button onClick={() => toast.success("Transcript Downloaded ( Simulated )")} className="rounded-none bg-[#adfa1d] text-black hover:bg-[#8ce000] border-2 border-white font-black uppercase shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#fff]">
-                                                                <Star className="mr-2 h-4 w-4" /> Download PDF
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        ) : (
-                                            <Card className="rounded-none border-2 border-black shadow-[6px_6px_0px_0px_#ff9f1c]">
-                                                <CardHeader className="border-b-2 border-black bg-yellow-300 py-3">
-                                                    <CardTitle className="flex justify-between items-center text-sm font-black uppercase tracking-wider text-black">
-                                                        <span>Current Question</span>
-                                                        <Badge className="bg-white text-black border-2 border-black text-xs font-bold px-2 rounded-none">
-                                                            {selectedTopic}
-                                                        </Badge>
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="p-8 text-center bg-white min-h-[300px] flex flex-col justify-center items-center">
-                                                    <AnimatePresence mode="wait">
-                                                        <motion.div
-                                                            key={activeQuestion}
-                                                            initial={{ opacity: 0, scale: 0.95 }}
-                                                            animate={{ opacity: 1, scale: 1 }}
-                                                            exit={{ opacity: 0, scale: 0.95 }}
-                                                            className="w-full max-w-3xl"
-                                                        >
-                                                            <h2 className="text-3xl md:text-4xl font-black mb-6 leading-tight min-h-[4.5rem] tracking-tight">
-                                                                "{activeQuestion}"
-                                                            </h2>
-
-                                                            <div className="flex justify-center gap-4">
-                                                                {!isInterviewActive ? (
-                                                                    <Button size="lg" onClick={startInterview} className="rounded-none bg-black text-white hover:bg-[#4ecdc4] hover:text-black border-2 border-black shadow-[4px_4px_0px_0px_#000] font-bold text-lg px-8 py-6 h-auto uppercase tracking-wide">
-                                                                        Start Answer
-                                                                    </Button>
-                                                                ) : (
-                                                                    <div className="flex flex-col items-center gap-2">
-                                                                        {!isRecordingAnswer ? (
-                                                                            <Button size="lg" onClick={startRecordingAnswer} className="rounded-none bg-[#adfa1d] text-black hover:bg-[#8ce000] border-2 border-black shadow-[4px_4px_0px_0px_#000] font-bold text-lg px-8 py-6 h-auto uppercase tracking-wide">
-                                                                                <Mic className="mr-2 h-5 w-5" /> Start Answer
-                                                                            </Button>
-                                                                        ) : (
-                                                                            <Button size="lg" onClick={stopRecordingAnswer} className="rounded-none bg-red-500 text-white hover:bg-red-600 border-2 border-black shadow-[4px_4px_0px_0px_#000] font-bold text-lg px-8 py-6 h-auto uppercase tracking-wide animate-pulse">
-                                                                                <div className="w-3 h-3 bg-white rounded-full mr-3"></div>
-                                                                                Stop & Submit
-                                                                            </Button>
-                                                                        )}
-                                                                        <p className="text-xs font-mono text-gray-400 mt-2 uppercase">AI is listening automatically</p>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </motion.div>
-                                                    </AnimatePresence>
-                                                </CardContent>
-                                            </Card>
-                                        )}
-
-                                    </div>
-
-                                    {/* Right: Notes & Tips */}
-                                    <div className="space-y-6">
-                                        <Card className="rounded-none border-2 border-black h-full flex flex-col shadow-[6px_6px_0px_0px_#00ffff]">
-                                            <CardHeader className="bg-[#00ffff] border-b-2 border-black py-4">
-                                                <CardTitle className="flex items-center gap-2 text-base font-black uppercase tracking-wider">
-                                                    <MessageSquare className="h-5 w-5" /> AI Coach Details
+                            {/* TAB: SIMULATOR (NEW - Launchpad) */}
+                            <TabsContent value="simulator" className="flex-1 overflow-y-auto p-4 md:p-8 flex items-center justify-center bg-gray-50/50">
+                                <Card className="w-full max-w-2xl mx-auto rounded-none border-2 border-black shadow-[8px_8px_0px_0px_#adfa1d] bg-white">
+                                    <CardHeader className="border-b-2 border-black bg-black text-white p-6">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-3 w-3 rounded-full bg-[#adfa1d] animate-pulse"></div>
+                                                <CardTitle className="text-2xl font-black uppercase tracking-wider text-[#adfa1d]">
+                                                    AI Simulation Setup
                                                 </CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="p-4 space-y-6 flex-1 flex flex-col bg-white">
-                                                <div className="space-y-2">
-                                                    <p className="text-xs font-black uppercase bg-black text-white inline-block px-1">Focus Areas</p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {['STAR Method', 'Clarity', 'Tone'].map(tag => (
-                                                            <Badge key={tag} className="rounded-none border-2 border-black bg-white text-black hover:bg-black hover:text-white transition-colors cursor-default text-[10px] px-2 py-0.5 font-bold uppercase shadow-[2px_2px_0px_0px_#ccc]">
-                                                                {tag}
-                                                            </Badge>
-                                                        ))}
+                                            </div>
+                                            <BrainCircuit className="h-8 w-8 text-white" />
+                                        </div>
+                                        <CardDescription className="text-gray-400 font-mono mt-2 uppercase tracking-wide">
+                                            Configure your mock interview session
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-8 space-y-8">
+
+                                        {/* Setup Form */}
+                                        <div className="space-y-6">
+                                            {/* Topic */}
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-black uppercase tracking-wide">Interview Topic</Label>
+                                                <Input
+                                                    value={selectedTopic}
+                                                    onChange={(e) => setSelectedTopic(e.target.value)}
+                                                    className="h-14 rounded-none border-2 border-black font-bold text-lg shadow-[4px_4px_0px_0px_#ccc] focus-visible:ring-0 focus-visible:shadow-[4px_4px_0px_0px_#000] transition-all"
+                                                    placeholder="E.g. System Design, React, Python..."
+                                                />
+                                                <p className="text-xs text-gray-500 font-bold">Type any tech stack or soft skill topic.</p>
+                                            </div>
+
+                                            {/* Level */}
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-black uppercase tracking-wide">Difficulty Level</Label>
+                                                <Select value={experienceLevel} onValueChange={setExperienceLevel}>
+                                                    <SelectTrigger className="h-14 rounded-none border-2 border-black font-bold text-lg shadow-[4px_4px_0px_0px_#ccc] focus:shadow-[4px_4px_0px_0px_#000] transition-all">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-none border-2 border-black font-bold">
+                                                        <SelectItem value="junior">Junior (Beginner)</SelectItem>
+                                                        <SelectItem value="mid">Mid-Level (Intermediate)</SelectItem>
+                                                        <SelectItem value="senior">Senior (Advanced)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* Resume */}
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-black uppercase tracking-wide">Resume (Optional)</Label>
+                                                {/* Custom File Input */}
+                                                <div
+                                                    className="h-14 flex items-center border-2 border-black cursor-pointer bg-white hover:bg-gray-50 transition-colors shadow-[4px_4px_0px_0px_#ccc] hover:shadow-[2px_2px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px]"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                >
+                                                    <div className="bg-black text-white h-full px-6 flex items-center justify-center font-black uppercase text-sm tracking-wider shrink-0">
+                                                        Upload PDF
                                                     </div>
-                                                </div>
-
-                                                <div className="bg-yellow-100 p-4 border-2 border-black text-xs font-bold leading-relaxed shadow-[4px_4px_0px_0px_#000]">
-                                                    <strong className="block text-base mb-1 uppercase">🔥 Pro Tip:</strong>
-                                                    Don't just answer the question. Tell a story. Use the camera eye-contact to build connection even with AI.
-                                                </div>
-
-                                                <div className="flex-1 flex flex-col mt-2">
-                                                    <label className="text-xs font-black uppercase mb-2">Scratchpad</label>
-                                                    <Input
-                                                        placeholder="Quick notes..."
-                                                        className="flex-1 rounded-none border-2 border-black align-top p-4 resize-none bg-gray-50 focus:bg-white focus:shadow-[4px_4px_0px_0px_#000] transition-all font-mono text-sm"
-                                                        as="textarea"
+                                                    <div className="flex-1 px-4 font-bold uppercase text-sm truncate text-gray-500">
+                                                        {resumeFile ? <span className="text-black">{resumeFile.name}</span> : "No file chosen"}
+                                                    </div>
+                                                    <input
+                                                        type="file"
+                                                        ref={fileInputRef}
+                                                        onChange={handleFileChange}
+                                                        className="hidden"
+                                                        accept=".pdf,.doc,.docx"
                                                     />
                                                 </div>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
-                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-6 border-t-2 border-dashed border-gray-300">
+                                            <Button
+                                                onClick={startInterview}
+                                                disabled={!selectedTopic}
+                                                className="w-full h-16 text-xl font-black uppercase tracking-widest bg-[#adfa1d] text-black hover:bg-[#8ce000] border-2 border-black shadow-[6px_6px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0px_0px_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Launch Interview Room 🚀
+                                            </Button>
+                                            <p className="text-center text-xs font-mono text-gray-400 mt-4 uppercase">
+                                                Opens in a dedicated immersive environment
+                                            </p>
+                                        </div>
+
+                                    </CardContent>
+                                </Card>
                             </TabsContent>
+
                         </div>
                     </div>
                 </Tabs>

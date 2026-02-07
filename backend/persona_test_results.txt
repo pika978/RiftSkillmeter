@@ -1,0 +1,7 @@
+Test 1 (system_prompt): 200
+{"persona_id":"p22c21ddd3c3","persona_name":"Test Simple","created_at":"2026-02-05T17:31:49.141307Z"}
+
+
+Test 2 (context): 400
+{"error":"Bad Request. {'_schema': [\"system_prompt is required for pipeline_mode 'full'\"]}"}
+

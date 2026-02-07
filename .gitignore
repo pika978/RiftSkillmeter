@@ -53,3 +53,9 @@ Thumbs.db
 backend/test_cert.py
 backend/debug_logs.py
 backend/check_logs.py
+
+# Google Cloud Authentication (CRITICAL - NEVER COMMIT!)
+backend/service-account-key.json
+backend/client_secret.json
+backend/token.json
+*-service-account-*.json

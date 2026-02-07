@@ -24,6 +24,8 @@ import MentorConnect from './pages/MentorConnect';
 import MentorDashboard from "./pages/MentorDashboard";
 import MeetingRoom from "./pages/MeetingRoom";
 import VerifyCertificate from "./pages/VerifyCertificate";
+import GeminiLiveLab from "./pages/GeminiLiveLab";
+import InterviewRoom from "./pages/InterviewRoom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
@@ -73,6 +75,8 @@ const App = () => {
                 <Route path="/mentor-connect" element={<ProtectedRoute><MentorConnect /></ProtectedRoute>} />
                 <Route path="/mentor/dashboard" element={<ProtectedRoute><MentorDashboard /></ProtectedRoute>} />
                 <Route path="/room/:roomId" element={<ProtectedRoute><MeetingRoom /></ProtectedRoute>} />
+                <Route path="/gemini-lab" element={<ProtectedRoute><GeminiLiveLab /></ProtectedRoute>} />
+                <Route path="/interview-room" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>} />
                 <Route path="/settings" element={<Settings />} />
 
                 {/* Catch-all */}

@@ -18,6 +18,15 @@ from .views import (
     upload_resume
 )
 
+# AI Interview routes
+from .interview_routes import (
+    start_interview,
+    upload_cv,
+    end_interview,
+    get_session_status,
+    get_transcript,
+)
+
 urlpatterns = [
     path('hello/', hello_world, name='hello_world'),
     
@@ -82,4 +91,11 @@ urlpatterns = [
     path('mentor/stats/', mentor_stats_view, name='mentor_stats'),
     path('mentor/availability/', mentor_availability_view, name='mentor_availability'),
     path('mentor/payments/', mentor_payments_view, name='mentor_payments'),
+    
+    # AI Interview Endpoints
+    path('interview/start/', start_interview, name='interview_start'),
+    path('interview/<str:session_id>/upload-cv/', upload_cv, name='interview_upload_cv'),
+    path('interview/<str:session_id>/end/', end_interview, name='interview_end'),
+    path('interview/<str:session_id>/status/', get_session_status, name='interview_status'),
+    path('interview/<str:session_id>/transcript/', get_transcript, name='interview_transcript'),
 ]
