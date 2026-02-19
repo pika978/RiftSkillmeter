@@ -366,6 +366,9 @@ class LiveKitService:
 # ============================================================
 # ALGORAND BLOCKCHAIN SERVICES
 # ============================================================
+# Uses AlgoKit (algokit_utils) as the primary Algorand framework.
+# AlgoKit is Algorand's official development toolkit — PS04 requirement.
+# ============================================================
 
 class AlgorandService:
     """
@@ -385,13 +388,14 @@ class AlgorandService:
 
     def __init__(self):
         try:
-            from algosdk.v2client import algod
+            # AlgoKit is the primary framework — PS04 requirement.
+            # AlgorandClient.testnet() auto-connects to TestNet via algonode.cloud.
+            from algokit_utils import AlgorandClient
             from algosdk import mnemonic as algo_mnemonic
             from algosdk import account as algo_account
 
-            self.algod_client = algod.AlgodClient(
-                '', 'https://testnet-api.algonode.cloud'
-            )
+            self.algorand_client = AlgorandClient.testnet()
+            self.algod_client = self.algorand_client.algod  # underlying algod for txns
 
             algo_mnemonic_str = os.environ.get('ALGORAND_MNEMONIC', '')
             if not algo_mnemonic_str or algo_mnemonic_str.startswith('word1'):
@@ -408,7 +412,7 @@ class AlgorandService:
 
             self.enabled = self.cert_app_id > 0 or self.badge_app_id > 0
             if not self.enabled:
-                logging.warning("AlgorandService: No App IDs configured, blockchain features disabled")
+                logging.warning("AlgorandService: No App IDs configured — run deploy scripts after TestNet setup")
 
         except Exception as e:
             logging.error(f"AlgorandService init error: {e}")
