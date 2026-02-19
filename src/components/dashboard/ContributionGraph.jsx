@@ -13,7 +13,8 @@ export function ContributionGraph() {
     useEffect(() => {
         const fetchActivity = async () => {
             try {
-                const res = await authFetch('http://localhost:8001/api/activity/');
+                const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001/api');
+                const res = await authFetch(`${API_URL}/activity/`);
                 if (res.ok) {
                     const data = await res.json();
                     console.log('[ContributionGraph] Activity data received:', data);

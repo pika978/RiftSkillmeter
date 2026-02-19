@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
-import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, ExternalLink, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 
@@ -41,7 +41,8 @@ export default function VerifyCertificate() {
 
         const verifyCert = async () => {
             try {
-                const response = await fetch(`http://localhost:8001/api/certificates/verify/${certId}/`);
+                const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001/api');
+                const response = await fetch(`${API_URL}/certificates/verify/${certId}/`);
                 if (!response.ok) {
                     throw new Error('Certificate not found or invalid');
                 }
@@ -158,6 +159,38 @@ export default function VerifyCertificate() {
                                         <p className="font-mono font-bold text-lg tracking-wider">{data.certificate_id}</p>
                                     </div>
                                 </div>
+
+                                {/* Algorand Blockchain Verification */}
+                                {data.nft_asset_id && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.4 }}
+                                        className="border-4 border-black bg-gradient-to-r from-emerald-50 to-teal-50 p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                                    >
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Shield className="h-5 w-5 text-emerald-700" />
+                                            <p className="font-mono text-xs font-bold uppercase text-emerald-800 tracking-widest">Blockchain Verified</p>
+                                        </div>
+                                        <p className="text-sm text-emerald-900 mb-3">
+                                            This certificate is permanently recorded on the <strong>Algorand blockchain</strong> as an ARC-69 NFT.
+                                        </p>
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            <div className="border-2 border-emerald-800 bg-white px-3 py-2 flex-1">
+                                                <p className="font-mono text-xs text-emerald-600 mb-1">ASA ID</p>
+                                                <p className="font-mono font-bold text-sm">{data.nft_asset_id}</p>
+                                            </div>
+                                            <a
+                                                href={`https://lora.algokit.io/testnet/asset/${data.nft_asset_id}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-2 border-4 border-black bg-emerald-600 text-white px-4 py-2 font-bold text-sm hover:bg-emerald-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
+                                            >
+                                                View on Explorer <ExternalLink className="h-4 w-4" />
+                                            </a>
+                                        </div>
+                                    </motion.div>
+                                )}
 
                                 {/* Footer / Signature */}
                                 <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-8 w-full border-t-2 border-dashed border-zinc-300">

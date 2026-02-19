@@ -1,0 +1,544 @@
+The three features share a single AlgoKit project with two smart contracts and one ASA (Algorand Standard Asset). The Django backend bridges AI logic to the blockchain. The React frontend reads on-chain state without exposing complexity to the user.
+When a user completes 100% of a course roadmap, SkillMeter mints an ARC-69 NFT to their Algorand wallet. The NFT stores the course name, score, and completion timestamp permanently on-chain. Certificate verification no longer depends on SkillMeter's server being alive.
+Why ARC-69? ARC-69 keeps metadata on-chain (in the transaction note field of the most recent ASA config transaction), unlike IPFS-based standards. This means verification works with just the Algorand indexer — no external service needed.
+Step 1 — Smart Contract  (contracts/skill_credential.py)
+Step 2 — Deploy with AlgoKit
+Step 3 — Django Backend  (backend/api/services.py)
+Add AlgorandService class to services.py and call it from the existing generate_certificate view.
+Step 4 — Frontend: VerifyCertificate.jsx
+Add a second verification path using the Algorand Testnet Indexer API. No wallet required — anyone can verify.
+Every time a user passes an assessment with a score of 80% or higher, SkillMeter mints a Skill Badge NFT to their wallet. Each badge represents a specific skill — React, Python, Data Structures, etc. The user's wallet becomes a provable, portable skill portfolio that exists independently of SkillMeter.
+Key Difference from Certificate NFT: Certificates are per-course (1 per roadmap). Skill Badges are per-concept/assessment (many per course). A user completing a full roadmap could earn 10–30 badges. This creates a rich on-chain skill graph.
+Step 1 — Smart Contract  (contracts/skill_badge.py)
+Step 2 — Django Integration
+Call issue_skill_badge from the existing mark_concept_complete view, which already handles assessment score checking.
+Step 3 — Add Wallet Field to LearnerProfile
+Step 4 — Frontend: Badge Gallery in Profile.jsx
+Fetch the user's badges from the Algorand Indexer and display them as a visual grid. No wallet connection required in the browser.
+$SKILL is a fungible Algorand Standard Asset (ASA). Users earn $SKILL automatically for on-chain learning actions. The smart contract holds a treasury of tokens and distributes them based on verified activity — daily tasks completed, streaks maintained, and assessments passed.
+Step 1 — Create the $SKILL ASA
+$SKILL is a standard fungible ASA. Create it once with a fixed supply held by the SkillMeter admin wallet (the contract treasury).
+Step 2 — Reward Distribution in Smart Contract
+Add a reward_tokens() method to the skill_badge.py contract (both features live in the same contract for simplicity):
+Step 3 — Django Backend: Reward Service
+Step 4 — Frontend: Live Token Balance in Dashboard
+Environment Variables  (.env)
+Model Additions  (backend/api/models.py)
+Deployment Order
+Create Algorand testnet wallet — save 25-word mnemonic to .env
+Fund wallet with test ALGO from faucet: bank.testnet.algorand.network
+Run create_skill_token.py — save SKILL_TOKEN_ID to .env
+algokit deploy testnet — save CERT_APP_ID and BADGE_APP_ID to .env
+Run Django migrations for new model fields
+Test end-to-end: complete a concept → check wallet on Testnet explorer
+Record 3-minute demo video and post to LinkedIn tagging RIFT
+SkillMeter.ai × Algorand  •  RIFT 2026 Hackathon  •  Build on Algorand Track
+--- TABLE ---
+⛓
+ALGORAND × SKILLMETER.AI
+Complete Integration Guide
+Certificate NFTs  •  Skill Badge NFTs  •  Learn-to-Earn $SKILL Token
+--- TABLE ---
+🎓
+Feature 1
+Course Certificate NFT | 🏅
+Feature 2
+Skill Badge NFT | 🪙
+Feature 3
+Learn-to-Earn $SKILL
+--- TABLE ---
+Architecture Overview
+--- TABLE ---
+SkillMeter.ai
+├── Smart Contracts  (AlgoKit / Algorand Python)
+│   ├── skill_credential.py  ← Issues Certificate NFTs
+│   └── skill_badge.py       ← Issues Badge NFTs + $SKILL rewards
+│
+├── Django Backend  (services.py)
+│   └── AlgorandService
+│       ├── issue_certificate_nft()
+│       ├── issue_skill_badge()
+│       └── reward_skill_tokens()
+│
+└── React Frontend
+├── VerifyCertificate.jsx  ← On-chain verification
+├── Profile.jsx            ← Badge gallery + token balance
+└── Dashboard.jsx          ← Live SKILL token counter
+--- TABLE ---
+Feature 1 — Course Completion Certificate NFT
+--- TABLE ---
+from algopy import ARC4Contract, Asset, GlobalState, String, UInt64
+from algopy import arc4, gtxn, itxn, Txn, Global
+
+class SkillCredential(ARC4Contract):
+"""
+Issues one ARC-69 NFT per completed SkillMeter course.
+Admin (SkillMeter backend wallet) calls issue_certificate().
+Anyone can call verify_certificate() to read on-chain metadata.
+"""
+admin: GlobalState[arc4.Address]
+total_issued: GlobalState[UInt64]
+
+@arc4.abimethod(create='require')
+def create_application(self) -> None:
+self.admin = arc4.Address(Txn.sender)
+self.total_issued = UInt64(0)
+
+@arc4.abimethod
+def issue_certificate(
+self,
+recipient: arc4.Address,
+course_name: String,
+score: UInt64,
+cert_hash: String,
+) -> UInt64:  # returns ASA ID
+# Only admin (SkillMeter backend) can call this
+assert Txn.sender == self.admin.value, 'Unauthorized'
+
+# Build ARC-69 metadata JSON in note field
+metadata = (
+'{"standard":"arc69",'
+'"description":"SkillMeter.ai verified credential",'
+f'"course":"{course_name}",'
+f'"score":{score},'
+f'"hash":"{cert_hash}"}'
+)
+
+# Inner transaction: mint NFT
+asset_id = itxn.AssetConfig(
+total=1,
+decimals=0,
+default_frozen=False,
+unit_name='CERT',
+asset_name=f'SkillMeter | {course_name}',
+manager=Global.current_application_address,
+note=metadata.encode(),
+).submit().created_asset.id
+
+# Transfer NFT to recipient
+itxn.AssetTransfer(
+xfer_asset=asset_id,
+asset_receiver=recipient,
+asset_amount=1,
+).submit()
+
+self.total_issued.value += 1
+return asset_id
+--- TABLE ---
+# Install AlgoKit (run once)
+pip install algokit algokit-utils py-algorand-sdk
+
+# Scaffold the project inside your existing repo
+cd SkillMeterAi/
+algokit init  --name algorand-contracts --template python
+
+# Copy skill_credential.py into contracts/
+# Then compile and deploy to Testnet
+algokit project run build
+algokit deploy testnet
+
+# OUTPUT: App ID: 123456789  ← Save this to your .env
+# App ID is your hackathon submission credential
+--- TABLE ---
+# Add to backend/api/services.py
+
+from algokit_utils import ApplicationClient, AlgorandClient
+from algosdk import mnemonic, transaction
+import os, json
+
+class AlgorandService:
+def __init__(self):
+self.client = AlgorandClient.testnet()
+self.app_id = int(os.environ['ALGORAND_CERT_APP_ID'])
+self.admin_key = mnemonic.to_private_key(
+os.environ['ALGORAND_MNEMONIC']
+)
+
+def issue_certificate_nft(
+self, recipient_address, course_name, score, cert_hash
+) -> dict:
+"""Called by generate_certificate view after PDF is created."""
+app_client = ApplicationClient(
+client=self.client.algod,
+app_id=self.app_id,
+signer=self.admin_key,
+)
+result = app_client.call(
+method='issue_certificate',
+recipient=recipient_address,
+course_name=course_name,
+score=score,
+cert_hash=cert_hash,
+)
+asset_id = result.return_value
+return {
+'asset_id': asset_id,
+'explorer_url': f'https://testnet.explorer.algorand.org/asset/{asset_id}'
+}
+--- TABLE ---
+# In backend/api/views.py — existing generate_certificate view
+# Add AFTER the existing PDF creation code:
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def generate_certificate(request, roadmap_id):
+roadmap = get_object_or_404(Roadmap, id=roadmap_id, user=request.user)
+# ... existing PDF generation code stays unchanged ...
+
+# NEW: Mint certificate NFT on Algorand
+if roadmap.progress >= 100:
+algo = AlgorandService()
+wallet = getattr(request.user.learnerprofile, 'algo_wallet', None)
+if wallet:
+nft_data = algo.issue_certificate_nft(
+recipient_address=wallet,
+course_name=roadmap.course.title,
+score=int(request.user.userprogress.average_score),
+cert_hash=roadmap.certificate_id,
+)
+roadmap.nft_asset_id  = nft_data['asset_id']
+roadmap.save()
+# ... rest of existing response ...
+--- TABLE ---
+// In src/pages/VerifyCertificate.jsx
+// Add this function alongside existing QR verification:
+
+const verifyOnAlgorand = async (assetId) => {
+const url = `https://testnet-idx.algonode.cloud/v2/assets/${assetId}/transactions`;
+const res  = await fetch(url);
+const data = await res.json();
+
+// Find the ARC-69 config transaction (last ASA config txn)
+const configTxn = data.transactions
+.filter(t => t['asset-config-transaction'])
+.pop();
+
+if (!configTxn) return null;
+
+const noteB64 = configTxn.note;
+const metadata = JSON.parse(atob(noteB64));
+
+return {
+course:    metadata.course,
+score:     metadata.score,
+timestamp: configTxn['round-time'],
+txId:      configTxn.id,
+};
+};
+
+// Show this UI block when nft_asset_id exists:
+// <div className='border-2 border-teal-500 rounded p-4 mt-4'>
+//   <p>✅ Verified on Algorand Testnet</p>
+//   <a href={`https://testnet.explorer.algorand.org/asset/${assetId}`}>
+//     View on Blockchain Explorer →
+//   </a>
+// </div>
+--- TABLE ---
+Feature 2 — Skill Badge NFT  (Per Assessment)
+--- TABLE ---
+from algopy import ARC4Contract, GlobalState, LocalState, String, UInt64
+from algopy import arc4, itxn, Txn, Global
+
+class SkillBadge(ARC4Contract):
+"""
+Mints ARC-69 Skill Badge NFTs on assessment completion.
+Also manages $SKILL token distribution (Feature 3 built-in).
+"""
+admin: GlobalState[arc4.Address]
+skill_token_id: GlobalState[UInt64]   # $SKILL ASA ID
+badges_issued: GlobalState[UInt64]
+
+@arc4.abimethod(create='require')
+def create_application(self, skill_token_asset_id: UInt64) -> None:
+self.admin = arc4.Address(Txn.sender)
+self.skill_token_id = skill_token_asset_id
+self.badges_issued = UInt64(0)
+
+@arc4.abimethod
+def issue_skill_badge(
+self,
+recipient: arc4.Address,
+skill_name: String,
+score: UInt64,
+topic_hash: String,
+) -> UInt64:
+assert Txn.sender == self.admin.value, 'Unauthorized'
+assert score >= UInt64(80), 'Score must be >= 80 to earn badge'
+
+metadata = (
+'{"standard":"arc69",'
+'"type":"skill_badge",'
+f'"skill":"{skill_name}",'
+f'"score":{score},'
+f'"topic":"{topic_hash}"}'
+)
+
+asset_id = itxn.AssetConfig(
+total=1,
+decimals=0,
+unit_name='BADGE',
+asset_name=f'SkillBadge | {skill_name}',
+manager=Global.current_application_address,
+note=metadata.encode(),
+).submit().created_asset.id
+
+itxn.AssetTransfer(
+xfer_asset=asset_id,
+asset_receiver=recipient,
+asset_amount=1,
+).submit()
+
+self.badges_issued.value += 1
+return asset_id
+--- TABLE ---
+# In backend/api/views.py — existing submit_assessment view
+# Add AFTER the score is calculated and saved:
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def submit_assessment(request, assessment_id):
+# ... existing scoring logic stays unchanged ...
+# result.score is already computed here
+
+# NEW: Mint skill badge if score >= 80
+if result.score >= 80:
+wallet = getattr(request.user.learnerprofile, 'algo_wallet', None)
+if wallet:
+algo = AlgorandService()
+nft = algo.issue_skill_badge(
+recipient_address=wallet,
+skill_name=assessment.concept.title,
+score=result.score,
+topic_hash=str(assessment.concept.id),
+)
+result.badge_asset_id = nft['asset_id']
+result.save()
+
+# ... existing response unchanged ...
+--- TABLE ---
+# In backend/api/models.py — LearnerProfile model
+# Add one field:
+
+class LearnerProfile(models.Model):
+user = models.OneToOneField(User, on_delete=models.CASCADE)
+# ... existing fields ...
+algo_wallet = models.CharField(  # ← ADD THIS
+max_length=58,
+blank=True,
+null=True,
+help_text='Algorand wallet address for NFT delivery'
+)
+
+# Then run:
+# python manage.py makemigrations && python manage.py migrate
+--- TABLE ---
+// Add to src/pages/Profile.jsx
+
+const fetchBadges = async (walletAddress) => {
+const url = `https://testnet-idx.algonode.cloud/v2/accounts/${walletAddress}/assets`;
+const res  = await fetch(url);
+const data = await res.json();
+
+// Filter to SkillMeter badge ASAs
+const badges = data.assets.filter(a => a['unit-name'] === 'BADGE');
+
+// Fetch metadata for each badge
+return Promise.all(badges.map(async (b) => {
+const txRes  = await fetch(
+`https://testnet-idx.algonode.cloud/v2/assets/${b['asset-id']}/transactions`
+);
+const txData = await txRes.json();
+const lastConfig = txData.transactions
+.filter(t => t['asset-config-transaction'])
+.pop();
+const meta = JSON.parse(atob(lastConfig.note));
+return { assetId: b['asset-id'], ...meta };
+}));
+};
+
+// Render as badge grid:
+// {badges.map(b => (
+//   <div key={b.assetId}
+//     className='border-2 border-purple-500 p-3 rounded-lg text-center'>
+//     <div className='text-2xl'>🏅</div>
+//     <div className='font-bold'>{b.skill}</div>
+//     <div className='text-sm text-gray-500'>Score: {b.score}%</div>
+//     <a href={`https://testnet.explorer.algorand.org/asset/${b.assetId}`}
+//        className='text-purple-500 text-xs'>View on-chain →</a>
+//   </div>
+// ))}
+--- TABLE ---
+Feature 3 — Learn-to-Earn  $SKILL Token Economy
+--- TABLE ---
+Action | SKILL Reward
+✅  Daily task completed | +5 SKILL
+📝  Assessment passed (≥ 80%) | +20 SKILL
+🔥  7-day learning streak | +50 SKILL bonus
+🎓  Course completed (100%) | +100 SKILL bonus
+🏅  Perfect score (100% assessment) | +10 SKILL extra
+--- TABLE ---
+# scripts/create_skill_token.py
+# Run once to create the $SKILL ASA on Testnet
+
+from algosdk.v2client import algod
+from algosdk import transaction, mnemonic
+import os
+
+algod_client = algod.AlgodClient(
+'', 'https://testnet-api.algonode.cloud'
+)
+
+private_key = mnemonic.to_private_key(os.environ['ALGORAND_MNEMONIC'])
+sender = mnemonic.to_public_key(os.environ['ALGORAND_MNEMONIC'])
+
+params = algod_client.suggested_params()
+
+txn = transaction.AssetCreateTxn(
+sender=sender,
+sp=params,
+total=10_000_000,      # 10 million SKILL tokens total supply
+decimals=0,
+default_frozen=False,
+unit_name='SKILL',
+asset_name='SkillMeter SKILL Token',
+manager=sender,
+reserve=sender,
+)
+
+signed = txn.sign(private_key)
+txid   = algod_client.send_transaction(signed)
+result = transaction.wait_for_confirmation(algod_client, txid, 4)
+
+print(f'$SKILL ASA ID: {result["asset-index"]}')
+# Save this to .env as ALGORAND_SKILL_TOKEN_ID
+--- TABLE ---
+# Add to contracts/skill_badge.py inside SkillBadge class:
+
+@arc4.abimethod
+def reward_tokens(
+self,
+recipient: arc4.Address,
+amount: UInt64,
+reason: String,   # 'daily_task' | 'assessment' | 'streak' | 'course'
+) -> None:
+assert Txn.sender == self.admin.value, 'Unauthorized'
+assert amount <= UInt64(100), 'Max 100 tokens per reward'
+
+# Transfer $SKILL from contract treasury to recipient
+itxn.AssetTransfer(
+xfer_asset=self.skill_token_id.value,
+asset_receiver=recipient,
+asset_amount=amount,
+note=f'SkillMeter reward: {reason}'.encode(),
+).submit()
+--- TABLE ---
+# Add to class AlgorandService in backend/api/services.py:
+
+REWARD_TABLE = {
+'daily_task':  5,
+'assessment':  20,
+'streak':      50,
+'course':      100,
+'perfect':     10,   # Added on top of 'assessment'
+}
+
+def reward_skill_tokens(self, recipient_address, reason) -> dict:
+"""
+Call this from any Django view that completes a learning action.
+reason: 'daily_task' | 'assessment' | 'streak' | 'course'
+"""
+amount = self.REWARD_TABLE.get(reason, 0)
+if amount == 0:
+return {'rewarded': False}
+
+app_client = ApplicationClient(
+client=self.client.algod,
+app_id=self.badge_app_id,
+signer=self.admin_key,
+)
+app_client.call(
+method='reward_tokens',
+recipient=recipient_address,
+amount=amount,
+reason=reason,
+)
+return {'rewarded': True, 'amount': amount, 'reason': reason}
+--- TABLE ---
+# In views.py — hook into 3 existing views:
+
+# 1. complete_daily_task view (already exists):
+algo.reward_skill_tokens(wallet, 'daily_task')
+
+# 2. submit_assessment view (already exists, after score check):
+if result.score >= 80:
+algo.reward_skill_tokens(wallet, 'assessment')
+if result.score == 100:
+algo.reward_skill_tokens(wallet, 'perfect')   # bonus
+
+# 3. generate_certificate view (already exists, after cert issued):
+algo.reward_skill_tokens(wallet, 'course')
+
+# 4. UserProgress update (streak check — already in mark_concept_complete):
+if user_progress.current_streak % 7 == 0:  # every 7 days
+algo.reward_skill_tokens(wallet, 'streak')
+--- TABLE ---
+// Add to src/pages/Dashboard.jsx
+
+const SKILL_TOKEN_ID = import.meta.env.VITE_SKILL_TOKEN_ID;
+
+const fetchSkillBalance = async (walletAddress) => {
+const url = `https://testnet-idx.algonode.cloud/v2/accounts/${walletAddress}`;
+const res  = await fetch(url);
+const data = await res.json();
+
+const skillAsset = data.account?.assets?.find(
+a => a['asset-id'] === Number(SKILL_TOKEN_ID)
+);
+return skillAsset?.amount ?? 0;
+};
+
+// In JSX — add to your existing stats cards:
+// <div className='border-2 border-green-500 rounded-lg p-4'>
+//   <div className='text-3xl font-bold text-green-600'>
+//     {skillBalance} $SKILL
+//   </div>
+//   <div className='text-sm text-gray-500'>
+//     Earned from learning on-chain
+//   </div>
+// </div>
+--- TABLE ---
+Complete Setup Checklist
+--- TABLE ---
+# Add to backend/.env
+
+ALGORAND_MNEMONIC=word1 word2 ... word25      # Admin wallet 25-word mnemonic
+ALGORAND_CERT_APP_ID=123456789                # From: algokit deploy testnet
+ALGORAND_BADGE_APP_ID=987654321               # Second contract App ID
+ALGORAND_SKILL_TOKEN_ID=555444333             # From: python scripts/create_skill_token.py
+
+# Add to frontend .env
+VITE_SKILL_TOKEN_ID=555444333
+VITE_CERT_APP_ID=123456789
+VITE_BADGE_APP_ID=987654321
+--- TABLE ---
+# LearnerProfile — add one field:
+algo_wallet = models.CharField(max_length=58, blank=True, null=True)
+
+# Roadmap — add one field:
+nft_asset_id = models.BigIntegerField(null=True, blank=True)
+
+# AssessmentResult — add one field:
+badge_asset_id = models.BigIntegerField(null=True, blank=True)
+
+# Run migrations:
+# python manage.py makemigrations && python manage.py migrate
+--- TABLE ---
+3-Minute Demo Script  (LinkedIn Video)
+--- TABLE ---
+Timestamp | What to Show
+0:00 – 0:25 | Open with problem: show a fake PDF certificate, say '87% of managers don't trust these'. Then say 'We fixed this with Algorand.'
+0:25 – 0:55 | Log in, open a concept, complete the daily task. Show the green toast: '+5 SKILL tokens earned'. Switch to Testnet explorer and show the $SKILL transfer transaction live.
+0:55 – 1:30 | Submit an assessment. Score 90%. Show '+20 SKILL' toast and the Skill Badge NFT appearing in the Profile badge gallery. Click the NFT to show it on the explorer.
+1:30 – 2:10 | Complete the course (100%). Show the Certificate NFT being minted. Open VerifyCertificate page, paste Asset ID, show it resolving from the Algorand Indexer with no login needed.
+2:10 – 2:45 | Open a fresh incognito tab. Paste the Asset ID on the verification page. Show full credential info loading purely from blockchain — no SkillMeter login, no server trust required.
+2:45 – 3:00 | Closing line: 'Your skills live on Algorand. Not on our servers. Not on paper. On-chain, forever.'

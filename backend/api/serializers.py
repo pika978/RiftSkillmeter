@@ -82,14 +82,15 @@ from .models import (
 class LearnerProfileSerializer(serializers.ModelSerializer):
     skillLevel = serializers.CharField(source='skill_level')
     learningGoals = serializers.JSONField(source='learning_goals')
-    learningGoals = serializers.JSONField(source='learning_goals')
     dailyStudyTime = serializers.IntegerField(source='daily_study_time')
     onboardingCompleted = serializers.BooleanField(source='onboarding_completed')
+    algoWallet = serializers.CharField(source='algo_wallet', required=False, allow_blank=True, allow_null=True)
+    pendingSkillTokens = serializers.IntegerField(source='pending_skill_tokens', read_only=True)
 
     class Meta:
         model = LearnerProfile
-        fields = ('id', 'user', 'skillLevel', 'learningGoals', 'dailyStudyTime', 'onboardingCompleted')
-        read_only_fields = ('user',)
+        fields = ('id', 'user', 'skillLevel', 'learningGoals', 'dailyStudyTime', 'onboardingCompleted', 'algoWallet', 'pendingSkillTokens')
+        read_only_fields = ('user', 'pendingSkillTokens')
 
 class ConceptSerializer(serializers.ModelSerializer):
     videoUrl = serializers.URLField(source='video_url')
@@ -140,11 +141,13 @@ class RoadmapSerializer(serializers.ModelSerializer):
     currentConcept = serializers.IntegerField(source='current_concept')
     startedAt = serializers.DateTimeField(source='started_at')
     lastAccessedAt = serializers.DateTimeField(source='last_accessed_at')
+    completedAt = serializers.DateTimeField(source='completed_at', read_only=True)
+    course_title = serializers.CharField(source='course.title', read_only=True)
     
     class Meta:
         model = Roadmap
-        fields = ('id', 'user', 'course', 'course_id', 'progress', 'currentChapter', 'currentConcept', 'startedAt', 'lastAccessedAt')
-        read_only_fields = ('user', 'startedAt', 'lastAccessedAt')
+        fields = ('id', 'user', 'course', 'course_id', 'progress', 'currentChapter', 'currentConcept', 'startedAt', 'lastAccessedAt', 'completedAt', 'certificate_id', 'nft_asset_id', 'course_title')
+        read_only_fields = ('user', 'startedAt', 'lastAccessedAt', 'completedAt', 'certificate_id', 'nft_asset_id', 'course_title')
 
 class AssessmentSerializer(serializers.ModelSerializer):
     timeLimit = serializers.IntegerField(source='time_limit')
@@ -155,11 +158,13 @@ class AssessmentSerializer(serializers.ModelSerializer):
 
 class AssessmentResultSerializer(serializers.ModelSerializer):
     completedAt = serializers.DateTimeField(source='completed_at')
+    conceptTitle = serializers.CharField(source='assessment.concept.title', read_only=True, default='')
+    conceptId    = serializers.CharField(source='assessment.concept.id', read_only=True, default='')
 
     class Meta:
         model = AssessmentResult
-        fields = ('id', 'user', 'assessment', 'score', 'answers', 'completedAt')
-        read_only_fields = ('user', 'completedAt')
+        fields = ('id', 'user', 'assessment', 'score', 'answers', 'completedAt', 'badge_asset_id', 'conceptTitle', 'conceptId')
+        read_only_fields = ('user', 'completedAt', 'badge_asset_id')
 
 class DailyTaskSerializer(serializers.ModelSerializer):
     taskType = serializers.CharField(source='task_type')

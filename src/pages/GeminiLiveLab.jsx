@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Square, Mic, MicOff, Volume2, Settings, Video, VideoOff } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Gemini Live API Testing Lab
@@ -13,6 +14,7 @@ import { Play, Square, Mic, MicOff, Volume2, Settings, Video, VideoOff } from 'l
  */
 
 const GeminiLiveLab = () => {
+    const { authFetch } = useAuth();
     const [isConnected, setIsConnected] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [status, setStatus] = useState('Disconnected');
@@ -39,13 +41,10 @@ const GeminiLiveLab = () => {
         try {
             addLog('Connecting to WebSocket...', 'info');
 
-            // Create a test session first
-            const response = await fetch('http://localhost:8001/api/interview/start/', {
+            const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001/api');
+            const response = await authFetch(`${API_URL}/interview/start/`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     skill_topic: 'Gemini Live Test',
                     level: 'intermediate'
@@ -60,7 +59,9 @@ const GeminiLiveLab = () => {
             addLog(`Session created: ${data.session_id}`, 'success');
 
             // Connect WebSocket
-            const wsUrl = `ws://localhost:8001/ws/interview/${data.session_id}/stream/`;
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsHost = import.meta.env.DEV ? 'localhost:8001' : new URL(API_URL).host;
+            const wsUrl = `${wsProtocol}//${wsHost}/ws/interview/${data.session_id}/stream/`;
             addLog(`Connecting to: ${wsUrl}`, 'info');
 
             const ws = new WebSocket(wsUrl);
@@ -346,8 +347,8 @@ const GeminiLiveLab = () => {
                         )}
                         AI Avatar
                         <span className={`text-xs px-2 py-1 rounded-full ${avatarStatus === 'ready'
-                                ? 'bg-green-500/20 text-green-400'
-                                : 'bg-gray-500/20 text-gray-400'
+                            ? 'bg-green-500/20 text-green-400'
+                            : 'bg-gray-500/20 text-gray-400'
                             }`}>
                             {avatarStatus === 'ready' ? 'Active' : 'Audio Only'}
                         </span>

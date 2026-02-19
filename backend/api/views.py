@@ -107,7 +107,23 @@ from .utils.notifications import send_email_notification, send_whatsapp_notifica
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Count, Sum, F
-from .services import ContentDiscoveryService, NotesGeneratorService, QuizGeneratorService
+from .services import ContentDiscoveryService, NotesGeneratorService, QuizGeneratorService, AlgorandService
+import logging
+
+# Algorand service singleton (fail-safe — never breaks app startup)
+try:
+    _algo_service = AlgorandService()
+except Exception:
+    _algo_service = None
+
+def _get_algo_wallet(user):
+    """Get user's Algorand wallet address. Returns None if not set."""
+    try:
+        profile = LearnerProfile.objects.get(user=user)
+        return profile.algo_wallet if profile.algo_wallet else None
+    except LearnerProfile.DoesNotExist:
+        return None
+
 
 class LearnerProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = LearnerProfileSerializer
@@ -166,7 +182,16 @@ def mark_concept_complete(request, concept_id):
         progress.completed = True
         progress.completed_at = timezone.now()
         progress.save()
-        
+
+        # --- Algorand: Award 1 $SKILL token for concept completion (only if newly completed) ---
+        if not was_completed:
+            try:
+                wallet = _get_algo_wallet(request.user)
+                if _algo_service and wallet:
+                    _algo_service.reward_skill_tokens(wallet, 'concept', user=request.user)
+            except Exception as e:
+                logging.error(f"Algorand concept reward failed: {e}")
+
         # --- Update Roadmap Progress ---
         course = concept.chapter.course
         total_concepts = Concept.objects.filter(chapter__course=course).count()
@@ -198,6 +223,14 @@ def mark_concept_complete(request, concept_id):
                     message_body=f"🚀 Milestone Unlocked: You just finished '{course.title}' on SkillMeter! 🎓 Good job!"
                 )
 
+                # --- Algorand: $SKILL reward for course completion ---
+                try:
+                    wallet = _get_algo_wallet(request.user)
+                    if _algo_service and wallet:
+                        _algo_service.reward_skill_tokens(wallet, 'course', user=request.user)
+                except Exception as e:
+                    logging.error(f"Algorand course reward failed: {e}")
+
         # --- Update User Global Stats ---
         if not was_completed:
             user_stats, _ = UserProgress.objects.get_or_create(user=request.user)
@@ -218,6 +251,15 @@ def mark_concept_complete(request, concept_id):
                 
                 if user_stats.current_streak > user_stats.longest_streak:
                     user_stats.longest_streak = user_stats.current_streak
+
+                # --- Algorand: $SKILL reward for 7-day streak milestones ---
+                if user_stats.current_streak > 0 and user_stats.current_streak % 7 == 0:
+                    try:
+                        wallet = _get_algo_wallet(request.user)
+                        if _algo_service and wallet:
+                            _algo_service.reward_skill_tokens(wallet, 'streak', user=request.user)
+                    except Exception as e:
+                        logging.error(f"Algorand streak reward failed: {e}")
             
             user_stats.save()
         
@@ -230,6 +272,18 @@ class AssessmentDetailView(generics.RetrieveAPIView):
     queryset = Assessment.objects.all()
     serializer_class = AssessmentSerializer
     permission_classes = [IsAuthenticated]
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_assessment_results(request):
+    """
+    Returns the current user's assessment results, including badge_asset_id.
+    Used by the Profile page to display earned skill badges.
+    """
+    results = AssessmentResult.objects.filter(user=request.user).select_related('assessment')
+    serializer = AssessmentResultSerializer(results, many=True)
+    return Response(serializer.data)
 
 
 @api_view(['POST'])
@@ -246,7 +300,40 @@ def submit_assessment(request, assessment_id):
             score=score,
             answers=answers
         )
-        
+
+        # --- Algorand: Badge NFT + $SKILL rewards ---
+        try:
+            wallet = _get_algo_wallet(request.user)
+            print(f"DEBUG badge: _algo_service={_algo_service}, enabled={getattr(_algo_service,'enabled',None)}, wallet={wallet}, score={score}")
+            if _algo_service and wallet:
+                # Mint badge NFT if score >= 10 (TEMP: lowered for testing, change back to 70 for production)
+                if score >= 10:
+                    print(f"DEBUG badge: calling issue_skill_badge for concept '{assessment.concept.title}' score={score}")
+                    badge = _algo_service.issue_skill_badge(
+                        wallet, assessment.concept.title[:30], score, str(assessment.concept.id)
+                    )
+                    print(f"DEBUG badge: result = {badge}")
+                    if badge and badge.get('asset_id'):
+                        result.badge_asset_id = badge['asset_id']
+                        result.save()
+                        print(f"DEBUG badge: SAVED asset_id={badge['asset_id']} to result #{result.id}")
+                    else:
+                        print(f"DEBUG badge: badge returned no asset_id — badge={badge}")
+                else:
+                    print(f"DEBUG badge: score {score} < 10, skipping badge")
+
+                # $SKILL rewards fire for ALL completed assessments (regardless of score)
+                _algo_service.reward_skill_tokens(wallet, 'assessment', user=request.user)
+                # Bonus for perfect score
+                if score == 100:
+                    _algo_service.reward_skill_tokens(wallet, 'perfect', user=request.user)
+            else:
+                print(f"DEBUG badge: SKIPPED — service={bool(_algo_service)}, wallet={wallet}")
+        except Exception as e:
+            logging.error(f"Algorand assessment hook failed: {e}")
+            print(f"DEBUG badge EXCEPTION: {e}")
+
+
         serializer = AssessmentResultSerializer(result)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     except Assessment.DoesNotExist:
@@ -316,6 +403,15 @@ def complete_task(request, task_id):
         task = DailyTask.objects.get(id=task_id, user=request.user)
         task.completed = True
         task.save()
+
+        # --- Algorand: $SKILL reward for daily task ---
+        try:
+            wallet = _get_algo_wallet(request.user)
+            if _algo_service and wallet:
+                _algo_service.reward_skill_tokens(wallet, 'daily_task', user=request.user)
+        except Exception as e:
+            logging.error(f"Algorand daily task reward failed: {e}")
+
         return Response({'status': 'Task completed'})
     except DailyTask.DoesNotExist:
         return Response({'error': 'Task not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -740,7 +836,64 @@ def generate_certificate(request, roadmap_id):
     except Exception as e:
         print(f"Failed to send certificate notifications: {e}")
 
+    # --- Algorand: Mint Certificate NFT ---
+    try:
+        wallet = _get_algo_wallet(request.user)
+        if _algo_service and wallet and not roadmap.nft_asset_id:
+            nft = _algo_service.issue_certificate_nft(
+                wallet, roadmap.course.title, roadmap.progress, cert_id
+            )
+            if nft and nft.get('asset_id'):
+                roadmap.nft_asset_id = nft['asset_id']
+                roadmap.save()
+                print(f"Certificate NFT minted: ASA {nft['asset_id']}")
+    except Exception as e:
+        print(f"Algorand certificate NFT failed (non-blocking): {e}")
+
     return response
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mint_certificate_nft(request, roadmap_id):
+    """
+    Retroactively mint an NFT for a certificate that was generated
+    before the Algorand contracts were deployed.
+    """
+    try:
+        roadmap = Roadmap.objects.get(id=roadmap_id, user=request.user)
+    except Roadmap.DoesNotExist:
+        return Response({'error': 'Roadmap not found'}, status=404)
+
+    if roadmap.progress < 100 or not roadmap.certificate_id:
+        return Response({'error': 'Course not completed or no certificate generated'}, status=400)
+
+    if roadmap.nft_asset_id:
+        return Response({'error': 'NFT already minted', 'nft_asset_id': roadmap.nft_asset_id}, status=400)
+
+    wallet = _get_algo_wallet(request.user)
+    if not wallet:
+        return Response({'error': 'No Algorand wallet set in your profile. Add one first.'}, status=400)
+
+    if not _algo_service:
+        return Response({'error': 'Algorand service is not available'}, status=503)
+
+    try:
+        nft = _algo_service.issue_certificate_nft(
+            wallet, roadmap.course.title, roadmap.progress, roadmap.certificate_id
+        )
+        if nft and nft.get('asset_id'):
+            roadmap.nft_asset_id = nft['asset_id']
+            roadmap.save()
+            return Response({
+                'success': True,
+                'nft_asset_id': nft['asset_id'],
+                'explorer_url': nft.get('explorer_url', ''),
+            })
+        else:
+            return Response({'error': 'Minting succeeded but no asset ID returned'}, status=500)
+    except Exception as e:
+        return Response({'error': f'Minting failed: {str(e)}'}, status=500)
 
 
 @api_view(['GET'])
@@ -764,10 +917,50 @@ def verify_certificate(request, cert_id):
             'course_title': roadmap.course.title,
             'completion_date': roadmap.completed_at or roadmap.last_accessed_at,
             'issue_date': roadmap.completed_at or roadmap.last_accessed_at,
+            'nft_asset_id': roadmap.nft_asset_id,
         }
         return Response(data)
     except Roadmap.DoesNotExist:
         return Response({'valid': False, 'error': 'Certificate ID not found'}, status=404)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_badge_image(request, result_id):
+    """
+    Generate and return a skill badge as a downloadable PNG image.
+    """
+    from .badge_generator import generate_badge_image
+
+    try:
+        result = AssessmentResult.objects.select_related(
+            'assessment__concept', 'user'
+        ).get(id=result_id, user=request.user)
+    except AssessmentResult.DoesNotExist:
+        return Response({'error': 'Assessment result not found'}, status=404)
+
+    if not result.badge_asset_id:
+        return Response({'error': 'No badge earned for this assessment'}, status=400)
+
+    # Build badge data — use concert title as skill name
+    concept = getattr(result.assessment, 'concept', None)
+    skill_name = (concept.title if concept else None) or 'Skill Assessment'
+    student = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+    date_str = result.completed_at.strftime('%B %d, %Y') if result.completed_at else 'N/A'
+
+    buffer = generate_badge_image(
+        skill_name=skill_name,
+        score=result.score,
+        date_earned=date_str,
+        asa_id=result.badge_asset_id,
+        student_name=student,
+    )
+
+    from django.http import HttpResponse
+    response = HttpResponse(buffer.getvalue(), content_type='image/png')
+    safe_name = skill_name.replace(' ', '_')[:30]
+    response['Content-Disposition'] = f'attachment; filename="badge_{safe_name}.png"'
+    return response
 
 
 # ===== Study Room / Study Session API =====

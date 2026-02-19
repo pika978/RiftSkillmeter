@@ -47,7 +47,7 @@ export function Navbar({ showLandingNav = false }) {
                     {/* Right side */}
                     <div className="flex items-center gap-4">
                         {/* "Join as Mentor", "Login" and "Get Started" buttons */}
-                        <Link to="/mentor-connect">
+                        <Link to="/signup?role=mentor">
                             <Button variant="ghost" className="font-display text-sm hidden sm:inline-flex">
                                 Join as Mentor
                             </Button>

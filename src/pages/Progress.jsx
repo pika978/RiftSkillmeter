@@ -18,9 +18,10 @@ export default function Progress() {
         const tokens = JSON.parse(localStorage.getItem('skillmeter_tokens') || '{}');
         const headers = tokens.access ? { 'Authorization': `Bearer ${tokens.access}` } : {};
 
+        const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001/api');
         const [leaderboardRes, trendingRes] = await Promise.all([
-          fetch('http://localhost:8001/api/leaderboard/', { headers }),
-          fetch('http://localhost:8001/api/trending/', { headers })
+          fetch(`${API_URL}/leaderboard/`, { headers }),
+          fetch(`${API_URL}/trending/`, { headers })
         ]);
 
         if (leaderboardRes.ok) setLeaderboard(await leaderboardRes.json());

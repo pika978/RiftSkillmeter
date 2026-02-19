@@ -25,21 +25,22 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-++q+!-b5r!^#u9n&#p8(#)%uzf=r@7coa*j9n=)_*v5-n)a61#'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-++q+!-b5r!^#u9n&#p8(#)%uzf=r@7coa*j9n=)_*v5-n)a61#')
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 
 # Application definition
 
 INSTALLED_APPS = [
     'daphne',
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -88,11 +90,12 @@ ASGI_APPLICATION = 'backend.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+import dj_database_url
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        conn_max_age=600,
+    )
 }
 
 
@@ -131,6 +134,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # Media files (Resumes, Profile Pictures, etc)
 MEDIA_URL = '/media/'
@@ -147,8 +156,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",
 ]
 
-# For development, allow all origins (remove in production)
-CORS_ALLOW_ALL_ORIGINS = True
+# Add production frontend URL if set
+_frontend_url = os.getenv('FRONTEND_URL')
+if _frontend_url:
+    CORS_ALLOWED_ORIGINS.append(_frontend_url)
+
+# Allow all origins only in debug mode
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 # REST Framework configuration
 REST_FRAMEWORK = {

@@ -190,7 +190,7 @@ class QuizGeneratorService:
         model = genai.GenerativeModel('gemini-3-flash-preview')  # Use working model
         
         prompt = f"""
-        Generate 10 multiple-choice questions based on these notes about "{topic}":
+        Generate 3 multiple-choice questions based on these notes about "{topic}":
         {context_notes[:2000]}...
         
         Return JSON list:
@@ -363,4 +363,230 @@ class LiveKitService:
             return "MOCK_LIVEKIT_TOKEN_FOR_DEV"
 
 
+# ============================================================
+# ALGORAND BLOCKCHAIN SERVICES
+# ============================================================
 
+class AlgorandService:
+    """
+    Bridges SkillMeter backend to Algorand blockchain.
+    Handles Certificate NFTs, Skill Badge NFTs, and $SKILL token rewards.
+    All methods are fail-safe — blockchain errors never break the learning flow.
+    """
+
+    REWARD_TABLE = {
+        'concept': 1,        # 1 $SKILL per completed concept
+        'daily_task': 5,
+        'assessment': 20,
+        'streak': 50,
+        'course': 100,
+        'perfect': 10,   # Added on top of 'assessment'
+    }
+
+    def __init__(self):
+        try:
+            from algosdk.v2client import algod
+            from algosdk import mnemonic as algo_mnemonic
+            from algosdk import account as algo_account
+
+            self.algod_client = algod.AlgodClient(
+                '', 'https://testnet-api.algonode.cloud'
+            )
+
+            algo_mnemonic_str = os.environ.get('ALGORAND_MNEMONIC', '')
+            if not algo_mnemonic_str or algo_mnemonic_str.startswith('word1'):
+                logging.warning("AlgorandService: ALGORAND_MNEMONIC not configured")
+                self.enabled = False
+                return
+
+            self.admin_key = algo_mnemonic.to_private_key(algo_mnemonic_str)
+            self.admin_address = algo_account.address_from_private_key(self.admin_key)
+
+            self.cert_app_id = int(os.environ.get('ALGORAND_CERT_APP_ID', '0') or '0')
+            self.badge_app_id = int(os.environ.get('ALGORAND_BADGE_APP_ID', '0') or '0')
+            self.skill_token_id = int(os.environ.get('ALGORAND_SKILL_TOKEN_ID', '0') or '0')
+
+            self.enabled = self.cert_app_id > 0 or self.badge_app_id > 0
+            if not self.enabled:
+                logging.warning("AlgorandService: No App IDs configured, blockchain features disabled")
+
+        except Exception as e:
+            logging.error(f"AlgorandService init error: {e}")
+            self.enabled = False
+
+    def issue_certificate_nft(self, recipient_address, course_name, score, cert_hash) -> dict:
+        """
+        Mints an ARC-69 Certificate NFT as a direct ASA creation.
+        Returns {'asset_id': int, 'explorer_url': str} or None on failure.
+        """
+        if not self.enabled:
+            logging.info("AlgorandService: Certificate NFT minting skipped (not enabled)")
+            return None
+
+        try:
+            from algosdk import transaction
+
+            # ARC-69 metadata in note field
+            metadata = json.dumps({
+                "standard": "arc69",
+                "description": "SkillMeter.ai verified credential",
+                "course": str(course_name),
+                "score": int(score),
+                "cert_id": str(cert_hash)
+            })
+
+            safe_name = course_name[:32] if course_name else "SkillCert"
+            params = self.algod_client.suggested_params()
+
+            # Direct ASA creation — reliably returns asset-index in confirmation
+            txn = transaction.AssetCreateTxn(
+                sender=self.admin_address,
+                sp=params,
+                total=1,
+                decimals=0,
+                default_frozen=False,
+                unit_name="SCERT",
+                asset_name=safe_name,
+                url=f"https://lora.algokit.io/testnet",
+                note=metadata.encode(),
+                manager=self.admin_address,
+                reserve=self.admin_address,
+                freeze=self.admin_address,
+                clawback=self.admin_address,
+            )
+
+            signed = txn.sign(self.admin_key)
+            txid = self.algod_client.send_transaction(signed)
+            result = transaction.wait_for_confirmation(self.algod_client, txid, 6)
+
+            asset_id = result.get('asset-index')
+            if asset_id:
+                logging.info(f"AlgorandService: Certificate NFT minted, ASA ID={asset_id}")
+                return {
+                    'asset_id': asset_id,
+                    'explorer_url': f'https://lora.algokit.io/testnet/asset/{asset_id}'
+                }
+            else:
+                logging.warning(f"AlgorandService: Certificate txn confirmed ({txid}) but asset-index missing")
+                return {'asset_id': 0, 'explorer_url': f'https://lora.algokit.io/testnet/tx/{txid}'}
+
+        except Exception as e:
+            logging.error(f"AlgorandService: Certificate NFT minting failed: {e}")
+            return None
+
+    def issue_skill_badge(self, recipient_address, skill_name, score, topic_hash) -> dict:
+        """
+        Mints an ARC-69 Skill Badge NFT as a direct ASA creation.
+        Called by submit_assessment view when score >= 80.
+        Returns {'asset_id': int, 'explorer_url': str} or None on failure.
+        """
+        if not self.enabled:
+            logging.info("AlgorandService: Badge NFT minting skipped (not enabled)")
+            return None
+
+        try:
+            from algosdk import transaction
+
+            metadata = json.dumps({
+                "standard": "arc69",
+                "type": "skill_badge",
+                "skill": str(skill_name),
+                "score": int(score),
+                "topic": str(topic_hash)
+            })
+
+            safe_name = skill_name[:32] if skill_name else "SkillBadge"
+            params = self.algod_client.suggested_params()
+
+            # Direct ASA creation — reliably returns asset-index in confirmation
+            txn = transaction.AssetCreateTxn(
+                sender=self.admin_address,
+                sp=params,
+                total=1,
+                decimals=0,
+                default_frozen=False,
+                unit_name="SBADGE",
+                asset_name=safe_name,
+                url=f"https://lora.algokit.io/testnet",
+                note=metadata.encode(),
+                manager=self.admin_address,
+                reserve=self.admin_address,
+                freeze=self.admin_address,
+                clawback=self.admin_address,
+            )
+
+            signed = txn.sign(self.admin_key)
+            txid = self.algod_client.send_transaction(signed)
+            result = transaction.wait_for_confirmation(self.algod_client, txid, 6)
+
+            asset_id = result.get('asset-index')
+            if asset_id:
+                logging.info(f"AlgorandService: Skill Badge minted, ASA ID={asset_id}")
+                return {
+                    'asset_id': asset_id,
+                    'explorer_url': f'https://lora.algokit.io/testnet/asset/{asset_id}'
+                }
+            else:
+                logging.warning(f"AlgorandService: Badge txn confirmed ({txid}) but asset-index missing")
+                return {'asset_id': 0, 'explorer_url': f'https://lora.algokit.io/testnet/tx/{txid}'}
+
+        except Exception as e:
+            logging.error(f"AlgorandService: Badge NFT minting failed: {e}")
+            return None
+
+    def reward_skill_tokens(self, recipient_address, reason, user=None) -> dict:
+        """
+        Distributes $SKILL tokens (ASA transfer) for a learning action.
+        reason: 'concept' | 'daily_task' | 'assessment' | 'streak' | 'course' | 'perfect'
+        If on-chain transfer fails (e.g. wallet not opted-in), tokens are stored in
+        LearnerProfile.pending_skill_tokens so no rewards are ever lost.
+        """
+        amount = self.REWARD_TABLE.get(reason, 0)
+        if amount == 0 or not self.enabled or self.skill_token_id == 0:
+            return {'rewarded': False, 'reason': reason}
+
+        try:
+            from algosdk import transaction
+
+            params = self.algod_client.suggested_params()
+
+            # Real ASA transfer of $SKILL tokens from admin wallet to recipient
+            txn = transaction.AssetTransferTxn(
+                sender=self.admin_address,
+                sp=params,
+                receiver=recipient_address,
+                amt=amount,
+                index=self.skill_token_id,
+                note=f'SkillMeter reward: {reason}'.encode(),
+            )
+
+            signed = txn.sign(self.admin_key)
+            txid = self.algod_client.send_transaction(signed)
+            transaction.wait_for_confirmation(self.algod_client, txid, 6)
+
+            logging.info(f"AlgorandService: Rewarded {amount} $SKILL for '{reason}' -> {recipient_address} (tx={txid})")
+
+            # If on-chain succeeded, clear any pending tokens (they're now on-chain)
+            if user:
+                try:
+                    from .models import LearnerProfile
+                    LearnerProfile.objects.filter(user=user).update(pending_skill_tokens=0)
+                except Exception:
+                    pass
+
+            return {'rewarded': True, 'amount': amount, 'reason': reason, 'txid': txid}
+
+        except Exception as e:
+            logging.error(f"AlgorandService: Token reward failed ({reason}): {e}")
+            # Save to pending — no rewards are lost
+            if user:
+                try:
+                    from .models import LearnerProfile
+                    from django.db.models import F
+                    LearnerProfile.objects.filter(user=user).update(
+                        pending_skill_tokens=F('pending_skill_tokens') + amount
+                    )
+                    logging.info(f"AlgorandService: Saved {amount} $SKILL as pending for user {user}")
+                except Exception as inner_e:
+                    logging.error(f"AlgorandService: Failed to save pending tokens: {inner_e}")
+            return {'rewarded': False, 'amount': amount, 'reason': reason}

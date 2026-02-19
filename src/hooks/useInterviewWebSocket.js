@@ -21,8 +21,8 @@ export function useInterviewWebSocket() {
     // Get WebSocket URL based on environment
     const getWsUrl = () => {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        // In development, Django runs on port 8000
-        const host = import.meta.env.DEV ? 'localhost:8001' : window.location.host;
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+        const host = import.meta.env.DEV ? 'localhost:8001' : new URL(apiUrl).host;
         return `${protocol}//${host}/ws/interview/`;
     };
 

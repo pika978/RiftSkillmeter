@@ -36,19 +36,22 @@ const convertToEmbedUrl = (url) => {
 };
 
 export default function Learn() {
-  const { currentRoadmap, markConceptComplete, selectConcept } = useLearning();
+  const { currentRoadmap, markConceptComplete, selectConcept, submitAssessment } = useLearning();
   const { authFetch } = useAuth();
   const [currentTab, setCurrentTab] = useState('video');
   const [assessmentAnswers, setAssessmentAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
+  const [assessmentResult, setAssessmentResult] = useState(null);
+  const [assessmentId, setAssessmentId] = useState(null);
   const [notes, setNotes] = useState(null);
   const [notesLoading, setNotesLoading] = useState(false);
   const [quiz, setQuiz] = useState(null);
   const [quizLoading, setQuizLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const API_URL = 'http://localhost:8001/api';
+  const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001/api');
 
   // Generate notes on-demand when Notes tab is clicked
   const handleGenerateNotes = async (conceptId) => {
@@ -86,6 +89,7 @@ export default function Learn() {
       if (response.ok) {
         const data = await response.json();
         setQuiz(data.quiz);
+        setAssessmentId(data.assessment_id);  // store ID for backend submission
         if (!data.cached) {
           toast({ title: 'Quiz Generated! 🧠', description: 'Test your knowledge!' });
         }
@@ -131,6 +135,8 @@ export default function Learn() {
       setQuiz(null);
       setAssessmentAnswers({});
       setShowResults(false);
+      setAssessmentResult(null);
+      setAssessmentId(null);
       setCurrentTab('video');
 
       // Calculate next concept/chapter indices
@@ -159,19 +165,53 @@ export default function Learn() {
       selectConcept(nextChapterIdx, nextConceptIdx);
     }
   };
-  const handleSubmitAssessment = () => {
+  const handleSubmitAssessment = async () => {
     const quizQuestions = quiz || [];
     if (quizQuestions.length === 0) return;
+
+    // Calculate score locally
     let correct = 0;
     quizQuestions.forEach((q, i) => {
       if (assessmentAnswers[i] === q.correctAnswer || assessmentAnswers[q.id] === q.correctAnswer)
         correct++;
     });
+    const scorePercent = Math.round((correct / quizQuestions.length) * 100);
     setShowResults(true);
-    toast({
-      title: `Score: ${correct}/${quizQuestions.length}`,
-      description: correct === quizQuestions.length ? 'Perfect score!' : 'Keep practicing!',
-    });
+
+    // Submit to backend (triggers badge NFT + $SKILL rewards)
+    if (assessmentId) {
+      setSubmitting(true);
+      try {
+        const result = await submitAssessment(
+          assessmentId,
+          scorePercent,
+          Object.entries(assessmentAnswers).map(([k, v]) => ({ question_index: k, answer: v }))
+        );
+        setAssessmentResult(result);
+        if (result?.badge_asset_id) {
+          toast({
+            title: `🏅 Skill Badge NFT Minted! Score: ${scorePercent}%`,
+            description: `ASA #${result.badge_asset_id} on Algorand TestNet — check your Profile!`,
+          });
+        } else {
+          toast({
+            title: `Score: ${correct}/${quizQuestions.length} (${scorePercent}%)`,
+            description: correct === quizQuestions.length ? '🌟 Perfect score! Bonus $SKILL earned!' : 'Keep practicing!',
+          });
+        }
+      } catch (e) {
+        console.error('Submit error:', e);
+        toast({ title: `Score: ${correct}/${quizQuestions.length} (${scorePercent}%)`, description: 'Keep practicing!' });
+      } finally {
+        setSubmitting(false);
+      }
+    } else {
+      // No assessment_id (quiz not from DB) - just show local result
+      toast({
+        title: `Score: ${correct}/${quizQuestions.length} (${scorePercent}%)`,
+        description: correct === quizQuestions.length ? '🌟 Perfect score!' : 'Keep practicing!',
+      });
+    }
   };
   if (!currentConcept) {
     return (<DashboardLayout>
@@ -310,8 +350,22 @@ export default function Learn() {
                       )}
                     </div>
                   ))}
-                  <Button onClick={handleSubmitAssessment} disabled={Object.keys(assessmentAnswers).length < quiz.length}>
-                    Submit Answers
+                  {assessmentResult?.badge_asset_id && (
+                    <div className="flex items-center gap-2 p-3 bg-yellow-50 border-2 border-yellow-400 rounded text-sm">
+                      <span>🏅</span>
+                      <span className="font-bold text-yellow-800">Badge NFT Minted!</span>
+                      <a
+                        href={`https://lora.algokit.io/testnet/asset/${assessmentResult.badge_asset_id}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="text-blue-700 underline font-mono text-xs"
+                      >ASA #{assessmentResult.badge_asset_id}</a>
+                    </div>
+                  )}
+                  <Button
+                    onClick={handleSubmitAssessment}
+                    disabled={Object.keys(assessmentAnswers).length < quiz.length || submitting || showResults}
+                  >
+                    {submitting ? '⏳ Submitting...' : showResults ? '✓ Submitted' : 'Submit Answers'}
                   </Button>
                 </>
               ) : (

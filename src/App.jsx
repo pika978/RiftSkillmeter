@@ -35,7 +35,8 @@ const queryClient = new QueryClient();
 
 const App = () => {
   useEffect(() => {
-    fetch("http://localhost:8001/api/hello/")
+    const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001/api');
+    fetch(`${API_URL}/hello/`)
       .then((res) => res.json())
       .then((data) => {
         console.log(data.message);
@@ -64,20 +65,20 @@ const App = () => {
                 <Route path="/verify" element={<VerifyCertificate />} />
 
                 {/* Protected Routes */}
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/roadmap" element={<Roadmap />} />
-                <Route path="/learn" element={<Learn />} />
-                <Route path="/progress" element={<Progress />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/practice-lab" element={<PracticeLab />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/roadmap" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
+                <Route path="/learn" element={<ProtectedRoute><Learn /></ProtectedRoute>} />
+                <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/practice-lab" element={<ProtectedRoute><PracticeLab /></ProtectedRoute>} />
                 <Route path="/study-room" element={<ProtectedRoute><StudyRoom /></ProtectedRoute>} />
                 <Route path="/mentor-connect" element={<ProtectedRoute><MentorConnect /></ProtectedRoute>} />
                 <Route path="/mentor/dashboard" element={<ProtectedRoute><MentorDashboard /></ProtectedRoute>} />
                 <Route path="/room/:roomId" element={<ProtectedRoute><MeetingRoom /></ProtectedRoute>} />
                 <Route path="/gemini-lab" element={<ProtectedRoute><GeminiLiveLab /></ProtectedRoute>} />
                 <Route path="/interview-room" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>} />
-                <Route path="/settings" element={<Settings />} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
                 {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />

@@ -1,0 +1,85 @@
+﻿AlgoBharat Hack Series 3.0 - Compete here after your hackathon for 30,000$ in prizes + acceleration support : 
+
+https://algobharat.in/hack-series3/
+
+
+Notion Technical Cheatsheet : 
+
+
+https://quickest-reaction-568.notion.site/Algorand-Technical-Resources-2fea260a8fdc8096b969f2248a96617d
+
+
+Algorand Blockchain application developer course on Nasscom ( recommended ) : 
+
+https://www.futureskillsprime.in/pathways/algorand-blockchain-application-developer-by-algorand-and-ssc-nasscom-assessment/
+
+
+Beginner to Intermediate Web3 MasterClasses* : 
+
+https://drive.google.com/drive/folders/1xxqEMHUgdeKd3InD4Zuf2Hmf8hWw-AyP
+
+
+
+Algorand Fundamentals Youtube Playlist:
+https://www.youtube.com/watch?v=4JVaRvN7n6I&list=PLwRyHoehE4356E8tPKxC2XJtFEyLOHHEB
+
+
+Developer Portal : 
+
+https://dev.algorand.co/
+
+
+Algorand Python : 
+https://algorandfoundation.github.io/puya/
+
+
+        - Dev portal documentation
+https://dev.algorand.co/concepts/smart-contracts/languages/python/
+
+
+
+
+Algorand Typescript : 
+
+https://github.com/algorandfoundation/puya-ts
+
+        - Dev portal documentation 
+https://dev.algorand.co/concepts/smart-contracts/languages/typescript/
+
+
+Youtube Channel : 
+
+https://www.youtube.com/@algodevs
+
+
+
+
+Algokit Installation : 
+
+https://algorand.co/algokit
+
+
+Template Github Repository : 
+
+https://github.com/marotipatre/Hackathon-QuickStart-template
+
+
+Walkthrough of resources : 
+
+
+Overview of Algorand technical resources.mp4
+
+
+Algorand Website : 
+
+https://algorand.co/
+
+
+TxnLab SDK : 
+
+https://www.txnlab.dev/
+
+
+Vibekit : 
+
+https://algorand.co/blog/vibekit-the-agentic-stack-for-algorand-builders

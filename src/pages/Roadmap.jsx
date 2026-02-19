@@ -23,8 +23,8 @@ export default function Roadmap() {
 
     setIsGenerating(true);
     try {
-      // Call backend API which generates PDF and sends email notification
-      const response = await authFetch(`http://localhost:8001/api/roadmaps/${currentRoadmap.id}/certificate/`);
+      const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001/api');
+      const response = await authFetch(`${API_URL}/roadmaps/${currentRoadmap.id}/certificate/`);
 
       if (response.ok) {
         // Download the PDF blob

@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera as MediaPipeCamera } from '@mediapipe/camera_utils';
 
-const API_URL = 'http://localhost:8001/api';
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001/api');
 
 export function FocusPanel() {
     const videoRef = useRef(null);

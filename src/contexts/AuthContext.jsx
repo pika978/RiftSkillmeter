@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(undefined);
-const API_URL = 'http://localhost:8001/api';
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001/api');
 const TOKEN_KEY = 'skillmeter_tokens';
 const USER_KEY = 'skillmeter_user';
 const ONBOARDING_KEY = 'skillmeter_onboarding';

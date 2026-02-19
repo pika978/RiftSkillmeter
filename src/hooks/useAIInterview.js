@@ -75,7 +75,8 @@ export const useAIInterview = () => {
     const connectWebSocket = useCallback((session_id) => {
         // Dynamic WebSocket URL
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = import.meta.env.DEV ? 'localhost:8001' : window.location.host;
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+        const host = import.meta.env.DEV ? 'localhost:8001' : new URL(apiUrl).host;
         const wsUrl = `${protocol}//${host}/ws/interview/${session_id}/stream/`;
 
         console.log('Connecting to WebSocket:', wsUrl);

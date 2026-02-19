@@ -15,7 +15,10 @@ from .views import (
     MentorListCreateView, MentorDetailView, BookingCreateView, 
     BookingListView, MentorDashboardBookingListView, update_booking_status,
     mentor_stats_view, mentor_availability_view, mentor_payments_view,
-    upload_resume
+    upload_resume,
+    download_badge_image,
+    mint_certificate_nft,
+    list_assessment_results
 )
 
 # AI Interview routes
@@ -50,6 +53,7 @@ urlpatterns = [
     path('roadmaps/generate/', generate_roadmap_ai, name='roadmap_generate_ai'),
     path('roadmaps/<int:pk>/', RoadmapDetailView.as_view(), name='roadmap_detail'),
     path('roadmaps/<int:roadmap_id>/certificate/', generate_certificate, name='roadmap_certificate'),
+    path('roadmaps/<int:roadmap_id>/mint-nft/', mint_certificate_nft, name='roadmap_mint_nft'),
     path('certificates/verify/<str:cert_id>/', verify_certificate, name='certificate_verify'),
     path('leaderboard/', get_leaderboard, name='leaderboard'),
     path('trending/', get_trending_topics, name='trending_topics'),
@@ -60,6 +64,8 @@ urlpatterns = [
     
     path('assessments/<int:pk>/', AssessmentDetailView.as_view(), name='assessment_detail'),
     path('assessments/<int:assessment_id>/submit/', submit_assessment, name='assessment_submit'),
+    path('assessments/results/', list_assessment_results, name='assessment_results'),
+    path('assessments/results/<int:result_id>/badge-image/', download_badge_image, name='badge_image'),
     
     path('tasks/', DailyTaskListView.as_view(), name='task_list'),
     path('tasks/<int:task_id>/complete/', complete_task, name='task_complete'),

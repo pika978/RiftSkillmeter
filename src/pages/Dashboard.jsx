@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,15 +6,45 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLearning } from '@/contexts/LearningContext';
-import { PlayCircle, FileText, CheckSquare, Flame, Trophy, ArrowRight, BookOpen, PlusCircle } from 'lucide-react';
+import { PlayCircle, FileText, CheckSquare, Flame, Trophy, ArrowRight, BookOpen, PlusCircle, Coins } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ContributionGraph } from '@/components/dashboard/ContributionGraph';
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, authFetch } = useAuth();
   const { currentRoadmap, roadmaps, setCurrentRoadmap, userProgress, todaysTasks } = useLearning();
   const navigate = useNavigate();
   const taskIcons = { video: PlayCircle, notes: FileText, assessment: CheckSquare };
+  const [skillBalance, setSkillBalance] = useState(0);
+
+  // Fetch $SKILL token balance from Algorand Indexer
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        // Get user's wallet from profile using authFetch (handles tokens correctly)
+        const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001/api');
+        const profileRes = await authFetch(`${API_URL}/profile/`);
+        if (!profileRes.ok) return;
+        const profile = await profileRes.json();
+        if (!profile?.algoWallet) return;
+
+        // Fetch token balance from Algorand Indexer
+        const indexerRes = await fetch(
+          `https://testnet-idx.algonode.cloud/v2/accounts/${profile.algoWallet}/assets`
+        );
+        if (!indexerRes.ok) return;
+        const indexerData = await indexerRes.json();
+        const SKILL_TOKEN_ID = 755783670;
+        const skillAsset = (indexerData.assets || []).find(
+          a => a['asset-id'] === SKILL_TOKEN_ID
+        );
+        if (skillAsset) setSkillBalance(skillAsset.amount || 0);
+      } catch {
+        // Silently fail — balance stays 0
+      }
+    };
+    fetchBalance();
+  }, []);
 
   // Default values for when userProgress is null/loading
   const stats = userProgress || {
@@ -37,10 +68,11 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {[
-            { icon: Flame, label: 'Day Streak', value: stats.currentStreak, color: 'text-secondary' }, // Yellow for streak
-            { icon: Trophy, label: 'Your Rank', value: stats.rank ? `#${stats.rank}` : 'N/A', color: 'text-primary' }, // Blue for rank
+            { icon: Flame, label: 'Day Streak', value: stats.currentStreak, color: 'text-secondary' },
+            { icon: Trophy, label: 'Your Rank', value: stats.rank ? `#${stats.rank}` : 'N/A', color: 'text-primary' },
+            { icon: Coins, label: '$SKILL Tokens', value: skillBalance, color: 'text-emerald-600' },
             { icon: BookOpen, label: 'Minutes Learned', value: stats.totalMinutesLearned, color: 'text-primary' },
             { icon: CheckSquare, label: 'Courses', value: stats.totalCoursesEnrolled, color: 'text-verdict-pass' },
           ].map((stat, i) => (

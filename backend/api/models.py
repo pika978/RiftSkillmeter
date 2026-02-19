@@ -20,6 +20,16 @@ class LearnerProfile(models.Model):
     phone_number = models.CharField(max_length=20, default='+919518380879', help_text="For WhatsApp notifications")
     onboarding_completed = models.BooleanField(default=False)
     resume = models.FileField(upload_to='resumes/', blank=True, null=True)
+    algo_wallet = models.CharField(
+        max_length=58,
+        blank=True,
+        null=True,
+        help_text='Algorand wallet address for NFT delivery'
+    )
+    pending_skill_tokens = models.IntegerField(
+        default=0,
+        help_text='$SKILL tokens earned but not yet transferred on-chain (e.g. wallet not opted-in)'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -113,6 +123,7 @@ class Roadmap(models.Model):
     last_accessed_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True, help_text="When the course was completed (progress=100%)")
     certificate_id = models.CharField(max_length=50, unique=True, null=True, blank=True, help_text="Unique hash for certificate verification")
+    nft_asset_id = models.BigIntegerField(null=True, blank=True, help_text="Algorand ASA ID for certificate NFT")
 
     def __str__(self):
         return f"{self.user.username} - {self.course.title}"
@@ -158,6 +169,7 @@ class AssessmentResult(models.Model):
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name='results')
     score = models.IntegerField(default=0)  # Percentage 0-100
     answers = models.JSONField(default=list)  # User's answers
+    badge_asset_id = models.BigIntegerField(null=True, blank=True, help_text="Algorand ASA ID for skill badge NFT")
     completed_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
