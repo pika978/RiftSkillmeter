@@ -395,7 +395,7 @@ class AlgorandService:
             from algosdk import account as algo_account
 
             self.algorand_client = AlgorandClient.testnet()
-            self.algod_client = self.algorand_client.algod  # underlying algod for txns
+            self.algod_client = self.algorand_client.client.algod  # underlying algod for txns
 
             algo_mnemonic_str = os.environ.get('ALGORAND_MNEMONIC', '')
             if not algo_mnemonic_str or algo_mnemonic_str.startswith('word1'):

@@ -1,4 +1,4 @@
-from algopy import ARC4Contract, GlobalState, String, UInt64
+from algopy import ARC4Contract, Bytes, GlobalState, String, UInt64
 from algopy import arc4, itxn, Txn, Global
 
 
@@ -44,13 +44,17 @@ class SkillBadge(ARC4Contract):
         assert Txn.sender == self.admin.value, "Unauthorized: only admin can issue badges"
         assert score >= UInt64(80), "Score must be >= 80% to earn a skill badge"
 
-        # ARC-69 metadata in the note field — fully on-chain, verifiable via Indexer
-        metadata = (
-            '{"standard":"arc69",'
-            '"type":"skill_badge",'
-            '"skill":"' + skill_name + '",'
-            '"score":' + score.__str__() + ","
-            '"topic":"' + topic_hash + '"}'
+        # ARC-69 metadata as Bytes for note field — fully on-chain, verifiable via Indexer
+        arc69_prefix = Bytes(b'{"standard":"arc69","type":"skill_badge","skill":"')
+        arc69_mid = Bytes(b'","topic":"')
+        arc69_suffix = Bytes(b'"}')
+
+        note_bytes = (
+            arc69_prefix
+            + skill_name.bytes
+            + arc69_mid
+            + topic_hash.bytes
+            + arc69_suffix
         )
 
         # Inner transaction: create the Badge NFT
@@ -60,7 +64,7 @@ class SkillBadge(ARC4Contract):
             unit_name="SBADGE",
             asset_name="SkillMeter | " + skill_name,
             manager=Global.current_application_address,
-            note=metadata.encode(),
+            note=note_bytes,
         ).submit().created_asset.id
 
         # Inner transaction: transfer badge to recipient
@@ -78,21 +82,24 @@ class SkillBadge(ARC4Contract):
         self,
         recipient: arc4.Address,
         amount: UInt64,
-        reason: String,  # 'concept' | 'daily_task' | 'assessment' | 'streak' | 'course'
+        reason: String,
     ) -> None:
         """
         Transfer $SKILL tokens from the contract treasury to a learner.
         Enforces a max of 100 tokens per reward to prevent abuse.
+        reason: 'concept' | 'daily_task' | 'assessment' | 'streak' | 'course'
         """
         assert Txn.sender == self.admin.value, "Unauthorized: only admin can reward tokens"
         assert amount <= UInt64(100), "Max 100 $SKILL tokens per reward"
+
+        reward_prefix = Bytes(b"SkillMeter reward: ")
 
         # Transfer $SKILL fungible tokens from contract treasury to learner
         itxn.AssetTransfer(
             xfer_asset=self.skill_token_id.value,
             asset_receiver=recipient,
             asset_amount=amount,
-            note=("SkillMeter reward: " + reason).encode(),
+            note=reward_prefix + reason.bytes,
         ).submit()
 
     @arc4.abimethod(readonly=True)

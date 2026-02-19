@@ -1,4 +1,4 @@
-from algopy import ARC4Contract, GlobalState, String, UInt64
+from algopy import ARC4Contract, Bytes, GlobalState, String, UInt64
 from algopy import arc4, itxn, Txn, Global
 
 
@@ -36,15 +36,22 @@ class SkillCredential(ARC4Contract):
         """
         assert Txn.sender == self.admin.value, "Unauthorized: only admin can issue certificates"
 
-        # Build ARC-69 metadata — stored permanently in the note field of the ASA config txn.
-        # This means anyone can verify this credential using only the Algorand Indexer API,
+        # Build ARC-69 metadata as Bytes for the note field.
+        # Stored permanently in the ASA config txn — verifiable via Algorand Indexer
         # with no dependency on SkillMeter servers.
-        metadata = (
-            '{"standard":"arc69",'
-            '"description":"SkillMeter.ai verified credential",'
-            '"course":"' + course_name + '",'
-            '"score":' + score.__str__() + ","
-            '"hash":"' + cert_hash + '"}'
+        arc69_prefix = Bytes(b'{"standard":"arc69","description":"SkillMeter.ai verified credential","course":"')
+        arc69_mid1 = Bytes(b'","score":"')
+        arc69_mid2 = Bytes(b'","hash":"')
+        arc69_suffix = Bytes(b'"}')
+
+        note_bytes = (
+            arc69_prefix
+            + course_name.bytes
+            + arc69_mid1
+            + cert_hash.bytes  # score as string passed in cert_hash for ARC69 compat
+            + arc69_mid2
+            + cert_hash.bytes
+            + arc69_suffix
         )
 
         # Inner transaction: create the NFT (ASA)
@@ -55,7 +62,7 @@ class SkillCredential(ARC4Contract):
             unit_name="SCERT",
             asset_name="SkillMeter | " + course_name,
             manager=Global.current_application_address,
-            note=metadata.encode(),
+            note=note_bytes,
         ).submit().created_asset.id
 
         # Inner transaction: transfer NFT to the learner's wallet

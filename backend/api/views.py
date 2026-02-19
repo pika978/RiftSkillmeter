@@ -1013,56 +1013,8 @@ def study_session_stats(request):
     })
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_leaderboard(request):
-    try:
-        from django.contrib.auth.models import User
-        
-        # Calculate leaderboard from actual data:
-        # - concepts_completed: Count of completed ConceptProgress per user
-        # - courses_progress: Sum of progress across Roadmaps
-        
-        leaderboard = []
-        
-        # Get all users who have any learning activity
-        users_with_progress = User.objects.filter(
-            concept_progress__completed=True
-        ).distinct()
-        
-        for user in users_with_progress:
-            # Count completed concepts
-            concepts_completed = ConceptProgress.objects.filter(
-                user=user, completed=True
-            ).count()
-            
-            # Calculate score: concepts * 10 + each course enrollment * 50
-            roadmaps_count = Roadmap.objects.filter(user=user).count()
-            score = (concepts_completed * 10) + (roadmaps_count * 50)
-            
-            leaderboard.append({
-                'rank': 0,
-                'name': f"{user.first_name} {user.last_name}".strip() or user.username,
-                'points': score,
-                'badge': ''
-            })
-        
-        # Sort by points descending
-        leaderboard.sort(key=lambda x: x['points'], reverse=True)
-        
-        # Take top 5 and assign ranks/badges
-        top_5 = leaderboard[:5]
-        for i, entry in enumerate(top_5):
-            entry['rank'] = i + 1
-            if i == 0: entry['badge'] = '🥇'
-            elif i == 1: entry['badge'] = '🥈'
-            elif i == 2: entry['badge'] = '🥉'
-            else: entry['badge'] = str(i + 1)
-        
-        return Response(top_5)
-    except Exception as e:
-        print(f"Error fetching leaderboard: {e}")
-        return Response({'error': str(e)}, status=500)
+
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
