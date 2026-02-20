@@ -12,7 +12,8 @@ SkillMeter.ai is an AI-powered learning platform that issues **verifiable skill 
 |---|---|
 | 🌐 **Frontend** | [https://rift-skillmeter.vercel.app](https://rift-skillmeter.vercel.app) |
 | 🔧 **Backend API** | [https://riftskillmeter-production.up.railway.app](https://riftskillmeter-production.up.railway.app) |
-| 🎥 **LinkedIn Demo Video** | _[Paste LinkedIn video URL here after recording]_ |
+| 🎥 **Demo Video** | [Google Drive](https://drive.google.com/drive/folders/1HZYGeW3BB8Vy2QE-vAF9OX0AAbF3b6Sd) |
+| 🎥 **LinkedIn Post** | [Watch on LinkedIn](https://www.linkedin.com/posts/omshinde80_blockchain-ai-web3-activity-7430439684587188224-iSXc) |
 
 ---
 
