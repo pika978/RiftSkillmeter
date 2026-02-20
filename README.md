@@ -1,45 +1,108 @@
-# 🎓 SkillMeter.ai — Blockchain-Verified Learning on Algorand
+<div align="center">
 
-> **RIFT 2026 Hackathon · Web3 / Blockchain Open Innovation Track · Build on Algorand**
+<!-- Animated Header Banner -->
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0D1117,50:00D4AA,100:6366F1&height=220&section=header&text=SkillMeter.ai&fontSize=72&fontColor=FFFFFF&animation=fadeIn&fontAlignY=35&desc=Blockchain-Verified%20Learning%20on%20Algorand&descSize=20&descAlignY=55&descColor=CCCCCC" width="100%" />
 
-SkillMeter.ai is an AI-powered learning platform that issues **verifiable skill credentials on the Algorand blockchain**. Every completed course earns a Certificate NFT, every passed assessment earns a Skill Badge NFT, and every learning action earns `$SKILL` tokens — all on Algorand TestNet.
+<!-- Animated Typing -->
+<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=00D4AA&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=80&lines=AI-Powered+Course+Generation+%F0%9F%A7%A0;NFT+Skill+Badges+on+Algorand+%F0%9F%8F%85;Verifiable+Certificate+NFTs+%F0%9F%8E%93;Earn+%24SKILL+Tokens+for+Learning+%F0%9F%92%B0" alt="Typing SVG" /></a>
+
+<br/>
+
+<!-- Shields Badges -->
+[![Algorand](https://img.shields.io/badge/Built_on-Algorand-000000?style=for-the-badge&logo=algorand&logoColor=white)](https://algorand.co)
+[![AlgoKit](https://img.shields.io/badge/AlgoKit-v2.10-00D4AA?style=for-the-badge&logo=algorand&logoColor=white)](https://developer.algorand.org/algokit/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![Django](https://img.shields.io/badge/Django-5.2-092E20?style=for-the-badge&logo=django&logoColor=white)](https://djangoproject.com)
+[![Gemini](https://img.shields.io/badge/Google_Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
+
+<br/>
+
+[![TestNet](https://img.shields.io/badge/Network-Algorand_TestNet-FFD700?style=flat-square&logo=algorand&logoColor=black)](https://testnet.algoexplorer.io)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![RIFT 2026](https://img.shields.io/badge/RIFT_2026-Hackathon-FF6B6B?style=flat-square&logo=hackclub&logoColor=white)](https://rift.com)
+
+</div>
+
+---
+
+> **🏆 RIFT 2026 Hackathon · Web3 / Blockchain Open Innovation Track · Build on Algorand**
+
+**SkillMeter.ai** is an AI-powered learning platform that issues **verifiable skill credentials on the Algorand blockchain**. Every completed course earns a Certificate NFT, every passed assessment earns a Skill Badge NFT, and every learning action earns `$SKILL` tokens — all on Algorand TestNet.
 
 ---
 
 ## 🔴 Live Demo
 
-|| URL|
-|---|---|
-| 🌐 **Frontend** | [https://rift-skillmeter.vercel.app](https://rift-skillmeter.vercel.app) |
-| 🔧 **Backend API** | [https://riftskillmeter-production.up.railway.app](https://riftskillmeter-production.up.railway.app) |
-| 🎥 **Demo Video** | [Google Drive](https://drive.google.com/drive/folders/1HZYGeW3BB8Vy2QE-vAF9OX0AAbF3b6Sd) |
-| 🎥 **LinkedIn Post** | [Watch on LinkedIn](https://www.linkedin.com/posts/omshinde80_blockchain-ai-web3-activity-7430439684587188224-iSXc) |
+<div align="center">
+
+| | Link |
+|:---:|:---|
+| 🌐 **Frontend** | [**rift-skillmeter.vercel.app**](https://rift-skillmeter.vercel.app) |
+| 🔧 **Backend API** | [**riftskillmeter-production.up.railway.app**](https://riftskillmeter-production.up.railway.app) |
+| 🎥 **Demo Video** | [**Watch on Google Drive**](https://drive.google.com/drive/folders/1HZYGeW3BB8Vy2QE-vAF9OX0AAbF3b6Sd) |
+| 💼 **LinkedIn Post** | [**View on LinkedIn**](https://www.linkedin.com/posts/omshinde80_blockchain-ai-web3-activity-7430439684587188224-iSXc) |
+
+</div>
 
 ---
 
 ## 📌 Problem Statement
 
-**The EdTech Gap: Structured Learning Ends Where Curiosity Begins**
+### 💡 The EdTech Gap: Structured Learning Ends Where Curiosity Begins
 
-Today's edtech landscape is saturated with platforms for technical, professional, and soft-skill training — but they all share the same blind spot: **what about the skills you *want* to learn, but no structured course exists for?** Whether it's urban farming, indie game sound design, or Vedic mathematics, learners are left piecing together scattered YouTube videos and blog posts with zero recognition for their effort.
+Today's edtech landscape is saturated with platforms for technical, professional, and soft-skill training — but they all share the same blind spot:
 
-Meanwhile, even on mainstream platforms, certificates are just PDFs — easily forged, impossible to verify automatically, and not portable across employers or institutions. Learners earn nothing tangible. Employers can't trust what they see.
+> **What about the skills you *want* to learn, but no structured course exists for?**
+
+Whether it's urban farming, indie game sound design, or Vedic mathematics — learners are left piecing together scattered YouTube videos and blog posts with **zero recognition** for their effort.
+
+Meanwhile, even on mainstream platforms, certificates are just PDFs — easily forged, impossible to verify automatically, and not portable across employers or institutions. **Learners earn nothing tangible. Employers can't trust what they see.**
+
+### 🚀 Our Solution
 
 **We propose SkillMeter.ai — a revolution in edtech, powered by AI and Algorand.**
 
-SkillMeter uses **AI to generate structured courses for *any* skill** (not just pre-built catalog items), and issues **immutable ARC-69 NFTs on the Algorand blockchain** for every milestone — turning learning achievements into on-chain credentials that anyone can verify instantly via a public URL, with no login required. Every passed quiz earns a Skill Badge NFT, every completed course earns a Certificate NFT, and every learning action earns `$SKILL` tokens.
+SkillMeter uses **AI to generate structured courses for *any* skill** (not just pre-built catalog items), and issues **immutable ARC-69 NFTs on the Algorand blockchain** for every milestone — turning learning achievements into on-chain credentials that anyone can verify instantly via a public URL, with no login required.
+
+<div align="center">
+
+```
+📝 Quiz Passed  →  🏅 Skill Badge NFT minted
+📚 Course Done  →  🎓 Certificate NFT minted
+💡 Daily Learn  →  💰 $SKILL Tokens earned
+```
+
+</div>
 
 ---
 
-## 🔗 Algorand Testnet Deployments
+## ⛓️ On-Chain Features
+
+<div align="center">
+
+| | Feature | What Happens | On-Chain Proof |
+|:---:|:---|:---|:---|
+| 🏅 | **Skill Badge NFT** | Minted when learner scores ≥ 10% on any quiz | ARC-69 NFT on Algorand TestNet |
+| 🎓 | **Certificate NFT** | Minted when learner completes 100% of a course | ARC-69 NFT — publicly verifiable |
+| 💰 | **$SKILL Tokens** | Earned for daily learning, completing concepts, tasks, quiz attempts | ASA token transfer |
+
+</div>
+
+---
+
+## 🔗 Algorand TestNet Deployments
+
+<div align="center">
 
 | Contract | App ID | Explorer |
-|---|---|---|
-| **SkillCredential** (Certificate NFT logic) | `755783876` | [View on Lora](https://lora.algokit.io/testnet/application/755783876) |
-| **SkillBadge** (Assessment Badge logic) | `755783900` | [View on Lora](https://lora.algokit.io/testnet/application/755783900) |
-| **$SKILL Token** (ASA) | `755783670` | [View on Lora](https://lora.algokit.io/testnet/asset/755783670) |
+|:---|:---:|:---|
+| 🔐 **SkillCredential** (Certificate NFT) | `755783876` | [🔍 View on Lora](https://lora.algokit.io/testnet/application/755783876) |
+| 🏅 **SkillBadge** (Assessment Badge) | `755783900` | [🔍 View on Lora](https://lora.algokit.io/testnet/application/755783900) |
+| 💰 **$SKILL Token** (ASA) | `755783670` | [🔍 View on Lora](https://lora.algokit.io/testnet/asset/755783670) |
 
-**Admin Wallet:** `IGKF6PEEDZXTHPT35WBBXVCWBESHGJOHYJVONSUYO4NRSSPKPENRAO6NWU`
+</div>
+
+> **Admin Wallet:** `IGKF6PEEDZXTHPT35WBBXVCWBESHGJOHYJVONSUYO4NRSSPKPENRAO6NWU`
 
 ---
 
@@ -64,59 +127,54 @@ SkillMeter uses **AI to generate structured courses for *any* skill** (not just 
 
 ### Smart Contract Interaction Flow
 
-1. **User completes assessment** → `POST /api/assessments/<id>/submit/`
-2. **Backend calls `AlgorandService.issue_skill_badge()`**
-3. **`algosdk.AssetCreateTxn`** creates ARC-69 NFT on TestNet
-4. **ASA ID saved** to `AssessmentResult.badge_asset_id` in PostgreSQL/SQLite
-5. **Frontend reads badge** from `GET /api/assessments/results/` and displays on Profile
-6. **Public verification** at `/verify?id=<cert_id>` — zero auth required
+```mermaid
+graph LR
+    A[👤 User completes quiz] --> B[📡 POST /api/.../submit/]
+    B --> C{Score ≥ 10%?}
+    C -->|Yes| D[🏅 issue_skill_badge]
+    C -->|No| E[📊 Save result only]
+    D --> F[⛓️ AssetCreateTxn on TestNet]
+    F --> G[💾 Save ASA ID to DB]
+    G --> H[🖼️ Badge on Profile]
+```
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Blockchain
-| Tool | Purpose |
-|---|---|
-| **AlgoKit v2.10.2** | Primary Algorand development framework (`algokit init`, `algokit deploy`) |
-| **algokit-utils ≥ 3.0.0** | `AlgorandClient.testnet()` for client management |
-| **algosdk** | `AssetCreateTxn`, `AssetTransferTxn` transaction primitives |
-| **Algopy (Python)** | Smart contract language for `SkillCredential` and `SkillBadge` contracts |
-| **Algorand TestNet** | Live deployment via AlgoNode.cloud |
+<div align="center">
 
-#### On-Chain Features
-| Feature | Description |
-|---|---|
-| 🏅 **Skill Badge NFT** | ARC-69 NFT minted automatically when a learner scores ≥ 10% on any quiz/assessment |
-| 🎓 **Certificate NFT** | ARC-69 NFT minted when a learner completes 100% of a course — publicly verifiable |
-| 💰 **$SKILL Tokens** | Reward tokens (ASA) earned for daily learning activities, completing concepts, finishing tasks, and quiz attempts |
+| Layer | Technology | Purpose |
+|:---:|:---|:---|
+| ⛓️ | **AlgoKit v2.10.2** | Algorand development framework |
+| ⛓️ | **algokit-utils ≥ 3.0** | `AlgorandClient.testnet()` client management |
+| ⛓️ | **algosdk** | Transaction primitives (`AssetCreateTxn`, `AssetTransferTxn`) |
+| ⛓️ | **Algopy (Python)** | Smart contract language for `SkillCredential` & `SkillBadge` |
+| 🔧 | **Django 5.2+** | REST API backend |
+| 🔧 | **Django REST Framework** | API endpoints & JWT auth |
+| 🔧 | **Daphne (ASGI)** | Production async server |
+| 🧠 | **Google Gemini API** | AI course generation, notes, quizzes |
+| ⚛️ | **React + Vite** | SPA frontend |
+| 🎨 | **shadcn/ui + Tailwind** | Component library & styling |
+| ✨ | **Framer Motion** | Animations & transitions |
 
-### Backend
-| Tool | Version |
-|---|---|
-| **Django** | 4.2+ |
-| **Django REST Framework** | 3.14+ |
-| **Daphne (ASGI)** | Production server |
-| **Google Gemini API** | AI course generation, notes, quiz |
-
-### Frontend
-| Tool | Purpose |
-|---|---|
-| **React + Vite** | SPA framework |
-| **shadcn/ui + Tailwind** | Component library |
-| **Framer Motion** | Animations |
-| **Lora Explorer** | On-chain NFT links |
+</div>
 
 ---
 
 ## ⚙️ Installation & Setup
 
-### Prerequisites
+<details>
+<summary><b>📦 Prerequisites</b></summary>
+
 - Python 3.11+
 - Node.js 18+
 - AlgoKit CLI: `pipx install algokit`
 
-### Backend Setup
+</details>
+
+<details>
+<summary><b>🔧 Backend Setup</b></summary>
 
 ```bash
 cd backend
@@ -132,7 +190,10 @@ python manage.py migrate
 python manage.py runserver 8001
 ```
 
-### Frontend Setup
+</details>
+
+<details>
+<summary><b>⚛️ Frontend Setup</b></summary>
 
 ```bash
 # From project root
@@ -145,7 +206,10 @@ cp .env.example .env
 npm run dev
 ```
 
-### Smart Contract Setup (AlgoKit)
+</details>
+
+<details>
+<summary><b>⛓️ Smart Contract Setup (AlgoKit)</b></summary>
 
 ```bash
 cd smart_contracts/projects/smart_contracts
@@ -153,11 +217,14 @@ algokit bootstrap all
 algokit deploy --network testnet
 ```
 
+</details>
+
 ---
 
-## 🔑 Required Environment Variables
+## 🔑 Environment Variables
 
-### Backend (`backend/.env`)
+<details>
+<summary><b>Backend (<code>backend/.env</code>)</b></summary>
 
 ```env
 SECRET_KEY=your-django-secret-key
@@ -184,35 +251,47 @@ TWILIO_AUTH_TOKEN=your-token
 TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
 ```
 
-### Frontend (`.env`)
+</details>
+
+<details>
+<summary><b>Frontend (<code>.env</code>)</b></summary>
 
 ```env
-VITE_API_URL=https://your-railway-url.railway.app/api
+VITE_API_URL=https://your-backend-url.railway.app/api
 ```
+
+</details>
 
 ---
 
 ## 📖 Usage Guide
 
-### 1. Register & Onboard
-Sign up → select your skill level → the AI generates a personalized course with real YouTube videos.
-
-### 2. Learn
-Watch videos → read AI-generated notes → take quizzes. Each action earns `$SKILL` tokens.
-
-### 3. Earn NFT Badges
-Score ≥ 10% on any quiz → a **Skill Badge NFT** is automatically minted to your Algorand wallet.
-
-### 4. Complete a Course → Certificate NFT
-When you reach 100% progress → download your PDF certificate → an **ARC-69 Certificate NFT** is minted on Algorand TestNet.
-
-### 5. Verify Credentials
-Share your certificate link: `https://your-app.com/verify?id=<CERT_ID>`
-Anyone can verify — no login needed. Shows on-chain NFT proof.
-
-### 6. Connect Your Wallet
-Go to **Profile → Algorand Wallet** → paste your 58-character Algorand address → click Save.
-Your NFTs are minted to this address automatically.
+<table>
+<tr>
+<td width="50">1️⃣</td>
+<td><b>Register & Onboard</b><br/>Sign up → select your skill level → the AI generates a personalized course with real YouTube videos</td>
+</tr>
+<tr>
+<td>2️⃣</td>
+<td><b>Learn</b><br/>Watch videos → read AI-generated notes → take quizzes. Each action earns <code>$SKILL</code> tokens</td>
+</tr>
+<tr>
+<td>3️⃣</td>
+<td><b>Earn NFT Badges</b><br/>Score ≥ 10% on any quiz → a <b>Skill Badge NFT</b> is minted to your Algorand wallet</td>
+</tr>
+<tr>
+<td>4️⃣</td>
+<td><b>Complete a Course → Certificate NFT</b><br/>Reach 100% progress → download PDF → <b>ARC-69 Certificate NFT</b> minted on Algorand TestNet</td>
+</tr>
+<tr>
+<td>5️⃣</td>
+<td><b>Verify Credentials</b><br/>Share your certificate link — anyone can verify on-chain, no login needed</td>
+</tr>
+<tr>
+<td>6️⃣</td>
+<td><b>Connect Your Wallet</b><br/>Profile → Algorand Wallet → paste your 58-char address → NFTs minted automatically</td>
+</tr>
+</table>
 
 ---
 
@@ -220,15 +299,21 @@ Your NFTs are minted to this address automatically.
 
 Every certificate and badge is verifiable on the Algorand TestNet explorer:
 
-- **Certificate NFT:** `https://lora.algokit.io/testnet/asset/<nft_asset_id>`
-- **Skill Badge NFT:** `https://lora.algokit.io/testnet/asset/<badge_asset_id>`
-- **$SKILL Token:** `https://lora.algokit.io/testnet/asset/755783670`
-- **SkillCredential Contract:** `https://lora.algokit.io/testnet/application/755783876`
-- **SkillBadge Contract:** `https://lora.algokit.io/testnet/application/755783900`
+| Asset | Explorer Link |
+|:---|:---|
+| 🎓 Certificate NFT | `https://lora.algokit.io/testnet/asset/<nft_asset_id>` |
+| 🏅 Skill Badge NFT | `https://lora.algokit.io/testnet/asset/<badge_asset_id>` |
+| 💰 $SKILL Token | [View on Lora](https://lora.algokit.io/testnet/asset/755783670) |
+| 🔐 SkillCredential Contract | [View on Lora](https://lora.algokit.io/testnet/application/755783876) |
+| 🏅 SkillBadge Contract | [View on Lora](https://lora.algokit.io/testnet/application/755783900) |
 
 ---
 
 ## 🚀 Deployment
+
+<table>
+<tr>
+<td width="50%">
 
 ### Railway (Backend)
 
@@ -237,36 +322,51 @@ Every certificate and badge is verifiable on the Algorand TestNet explorer:
 3. Add all environment variables from `backend/.env`
 4. Railway auto-detects `railway.json` — deploys via `daphne`
 
+</td>
+<td width="50%">
+
 ### Vercel (Frontend)
 
 1. Connect GitHub repo to [Vercel](https://vercel.com)
 2. Set root directory to project root
-3. Add `VITE_API_URL` pointing to your Railway backend URL
+3. Add `VITE_API_URL` pointing to your backend URL
 4. Vercel auto-detects `vercel.json`
+
+</td>
+</tr>
+</table>
 
 ---
 
 ## ⚠️ Known Limitations
 
-1. **Wallet opt-in required:** Users must opt-in to ASA `755783670` in Pera/Defly wallet before receiving `$SKILL` tokens. Tokens are stored as `pending_skill_tokens` until opt-in.
-2. **TestNet only:** All deployments are on Algorand TestNet. MainNet deployment requires funded admin wallet.
-3. **Badge threshold:** Currently set to score ≥ 10% for testing. Should be raised to ≥ 70% for production.
-4. **Admin minting:** NFTs are minted from the admin wallet (custodial). A production version would use smart contract escrow or clawback.
-5. **Video API quota:** YouTube Data API v3 has daily quota limits. Fallback to YouTube search URLs when quota exceeded.
+| # | Limitation | Detail |
+|:---:|:---|:---|
+| 1 | **Wallet opt-in required** | Users must opt-in to ASA `755783670` before receiving `$SKILL` tokens |
+| 2 | **TestNet only** | All deployments on Algorand TestNet. MainNet requires funded admin wallet |
+| 3 | **Badge threshold** | Set to ≥ 10% for testing. Production should be ≥ 70% |
+| 4 | **Admin minting** | NFTs minted from admin wallet (custodial). Production would use escrow |
+| 5 | **Video API quota** | YouTube Data API has daily limits. Fallback to search URLs when exceeded |
 
 ---
 
 ## 👥 Team
 
-| Name |
-|---|
-| **Dhiraj Dahale** |
-| **Om Shinde** |
-| **Anant Pagar** |
+<div align="center">
+
+| | |
+|:---:|:---:|
+| **Dhiraj Dahale** | **Om Shinde** |
+| **Anant Pagar** | |
+
+</div>
 
 ---
 
 ## 📁 Project Structure
+
+<details>
+<summary>Click to expand</summary>
 
 ```
 AiBoomiSkillMeter/
@@ -302,8 +402,20 @@ AiBoomiSkillMeter/
 └── README.md                   # This file
 ```
 
+</details>
+
 ---
 
 ## 📜 License
 
-MIT License — built for RIFT 2026 Hackathon.
+MIT License — built for **RIFT 2026 Hackathon**.
+
+---
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0D1117,50:00D4AA,100:6366F1&height=120&section=footer" width="100%" />
+
+**Built with ❤️ on Algorand · RIFT 2026**
+
+</div>
