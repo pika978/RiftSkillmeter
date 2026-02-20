@@ -19,11 +19,15 @@ SkillMeter.ai is an AI-powered learning platform that issues **verifiable skill 
 
 ## 📌 Problem Statement
 
-**Original Idea: Decentralized Skill Credential Verification**
+**The EdTech Gap: Structured Learning Ends Where Curiosity Begins**
 
-Traditional e-learning platforms issue PDFs that are easily forged and impossible to verify automatically. Employers cannot trust certificates. Learners have no portable proof of skill.
+Today's edtech landscape is saturated with platforms for technical, professional, and soft-skill training — but they all share the same blind spot: **what about the skills you *want* to learn, but no structured course exists for?** Whether it's urban farming, indie game sound design, or Vedic mathematics, learners are left piecing together scattered YouTube videos and blog posts with zero recognition for their effort.
 
-**Our solution:** SkillMeter.ai uses Algorand to mint immutable ARC-69 NFTs for every skill milestone — turning learning achievements into on-chain credentials that anyone can verify instantly via a public URL, with no login required.
+Meanwhile, even on mainstream platforms, certificates are just PDFs — easily forged, impossible to verify automatically, and not portable across employers or institutions. Learners earn nothing tangible. Employers can't trust what they see.
+
+**We propose SkillMeter.ai — a revolution in edtech, powered by AI and Algorand.**
+
+SkillMeter uses **AI to generate structured courses for *any* skill** (not just pre-built catalog items), and issues **immutable ARC-69 NFTs on the Algorand blockchain** for every milestone — turning learning achievements into on-chain credentials that anyone can verify instantly via a public URL, with no login required. Every passed quiz earns a Skill Badge NFT, every completed course earns a Certificate NFT, and every learning action earns `$SKILL` tokens.
 
 ---
 
@@ -249,7 +253,7 @@ Every certificate and badge is verifiable on the Algorand TestNet explorer:
 
 | Name | Role |
 |---|---|
-| **[Your Name — update this!]** | Full-Stack Developer, Algorand Integration, AI Integration |
+| **Om Shinde** | Full-Stack Developer, Algorand Integration, AI Integration |
 
 ---
 
