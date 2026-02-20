@@ -154,6 +154,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8080",
     "http://localhost:8081",
+    "https://rift-skillmeter.vercel.app",
 ]
 
 # Add production frontend URL if set
@@ -161,8 +162,9 @@ _frontend_url = os.getenv('FRONTEND_URL')
 if _frontend_url:
     CORS_ALLOWED_ORIGINS.append(_frontend_url)
 
-# Allow all origins only in debug mode
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+# Allow all origins (safe for hackathon / open API)
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 # REST Framework configuration
 REST_FRAMEWORK = {
