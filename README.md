@@ -84,6 +84,13 @@ SkillMeter uses **AI to generate structured courses for *any* skill** (not just 
 | **Algopy (Python)** | Smart contract language for `SkillCredential` and `SkillBadge` contracts |
 | **Algorand TestNet** | Live deployment via AlgoNode.cloud |
 
+#### On-Chain Features
+| Feature | Description |
+|---|---|
+| 🏅 **Skill Badge NFT** | ARC-69 NFT minted automatically when a learner scores ≥ 10% on any quiz/assessment |
+| 🎓 **Certificate NFT** | ARC-69 NFT minted when a learner completes 100% of a course — publicly verifiable |
+| 💰 **$SKILL Tokens** | Reward tokens (ASA) earned for daily learning activities, completing concepts, finishing tasks, and quiz attempts |
+
 ### Backend
 | Tool | Version |
 |---|---|
