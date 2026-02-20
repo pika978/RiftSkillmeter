@@ -185,34 +185,22 @@ VITE_API_URL=https://your-railway-url.railway.app/api
 ### 1. Register & Onboard
 Sign up → select your skill level → the AI generates a personalized course with real YouTube videos.
 
-![Register and onboard — AI course generation](./docs/screenshots/onboarding.png)
-
 ### 2. Learn
 Watch videos → read AI-generated notes → take quizzes. Each action earns `$SKILL` tokens.
-
-![Learning page with AI notes and YouTube videos](./docs/screenshots/learning.png)
 
 ### 3. Earn NFT Badges
 Score ≥ 10% on any quiz → a **Skill Badge NFT** is automatically minted to your Algorand wallet.
 
-![Skill Badge NFT minted on Algorand TestNet](./docs/screenshots/badge_minted.png)
-
 ### 4. Complete a Course → Certificate NFT
 When you reach 100% progress → download your PDF certificate → an **ARC-69 Certificate NFT** is minted on Algorand TestNet.
-
-![Certificate NFT on Algorand Lora Explorer](./docs/screenshots/certificate_nft.png)
 
 ### 5. Verify Credentials
 Share your certificate link: `https://your-app.com/verify?id=<CERT_ID>`
 Anyone can verify — no login needed. Shows on-chain NFT proof.
 
-![Public certificate verification page](./docs/screenshots/verify_cert.png)
-
 ### 6. Connect Your Wallet
 Go to **Profile → Algorand Wallet** → paste your 58-character Algorand address → click Save.
 Your NFTs are minted to this address automatically.
-
-![Profile page showing $SKILL balance and badge gallery](./docs/screenshots/profile.png)
 
 ---
 
