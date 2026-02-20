@@ -8,10 +8,10 @@ SkillMeter.ai is an AI-powered learning platform that issues **verifiable skill 
 
 ## 🔴 Live Demo
 
-| | URL |
+|| URL|
 |---|---|
-| 🌐 **Frontend** | _[Deploy to Vercel — see setup below]_ |
-| 🔧 **Backend API** | _[Deploy to Railway — see setup below]_ |
+| 🌐 **Frontend** | [https://rift-skillmeter.vercel.app](https://rift-skillmeter.vercel.app) |
+| 🔧 **Backend API** | [https://riftskillmeter-production.up.railway.app](https://riftskillmeter-production.up.railway.app) |
 | 🎥 **LinkedIn Demo Video** | _[Paste LinkedIn video URL here after recording]_ |
 
 ---
