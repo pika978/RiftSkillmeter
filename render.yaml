@@ -1,0 +1,33 @@
+databases: []
+
+services:
+  - type: web
+    name: rift-skillmeter-backend
+    runtime: python
+    region: singapore
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: daphne -b 0.0.0.0 -p $PORT backend.asgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: CORS_ALLOW_ALL_ORIGINS
+        value: "True"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: ALGORAND_MNEMONIC
+        sync: false
+      - key: ALGORAND_CERT_APP_ID
+        value: "755783876"
+      - key: ALGORAND_BADGE_APP_ID
+        value: "755783900"
+      - key: ALGORAND_SKILL_TOKEN_ID
+        value: "755783670"
