@@ -251,11 +251,11 @@ Every certificate and badge is verifiable on the Algorand TestNet explorer:
 
 ## 👥 Team
 
-| Name | Role |
-|---|---|
-| **Dhiraj Dahale** | Team Lead |
-| **Om Shinde** | Full-Stack Developer, Algorand Integration, AI Integration |
-| **Anant Pagar** | Team Member |
+| Name |
+|---|
+| **Dhiraj Dahale** |
+| **Om Shinde** |
+| **Anant Pagar** |
 
 ---
 
